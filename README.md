@@ -1,151 +1,89 @@
-![BongoCat](https://socialify.git.ci/ayangweb/BongoCat/image?custom_description=&description=1&font=Source+Code+Pro&forks=1&issues=1&logo=https%3A%2F%2Fgithub.com%2Fayangweb%2FBongoCat%2Fblob%2Fmaster%2Fsrc-tauri%2Fassets%2Flogo-mac.png%3Fraw%3Dtrue&name=1&owner=1&pattern=Floating+Cogs&pulls=1&stargazers=1&theme=Auto)
+# AI 桌面宠物（基于 BongoCat 改造）
 
-<div align="center">
-  <div>
-    <a href="https://github.com/ayangweb/BongoCat/releases"><img alt="Windows" src="https://img.shields.io/badge/-Windows-blue?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB0PSIxNzI2MzA1OTcxMDA2IiBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjE1NDgiIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4Ij48cGF0aCBkPSJNNTI3LjI3NTU1MTYxIDk2Ljk3MTAzMDEzdjM3My45OTIxMDY2N2g0OTQuNTEzNjE5NzVWMTUuMDI2NzU3NTN6TTUyNy4yNzU1NTE2MSA5MjguMzIzNTA4MTVsNDk0LjUxMzYxOTc1IDgwLjUyMDI4MDQ5di00NTUuNjc3NDcxNjFoLTQ5NC41MTM2MTk3NXpNNC42NzA0NTEzNiA0NzAuODMzNjgyOTdINDIyLjY3Njg1OTI1VjExMC41NjM2ODE5N2wtNDE4LjAwNjQwNzg5IDY5LjI1Nzc5NzUzek00LjY3MDQ1MTM2IDg0Ni43Njc1OTcwM0w0MjIuNjc2ODU5MjUgOTE0Ljg2MDMxMDEzVjU1My4xNjYzMTcwM0g0LjY3MDQ1MTM2eiIgcC1pZD0iMTU0OSIgZmlsbD0iI2ZmZmZmZiI+PC9wYXRoPjwvc3ZnPg==" /></a>
-    <a href="https://github.com/ayangweb/BongoCat/releases"><img alt="MacOS" src="https://img.shields.io/badge/-MacOS-black?style=flat-square&logo=apple&logoColor=white" /></a>
-    <a href="https://github.com/ayangweb/BongoCat/releases"><img alt="Linux" src="https://img.shields.io/badge/-Linux-yellow?style=flat-square&logo=linux&logoColor=white" /></a>
-  </div>
+> 本项目基于开源桌面宠物 [BongoCat](https://github.com/ayangweb/BongoCat)（Tauri + Vue + Live2D）二次开发，在保留原有"猫咪随键鼠动作实时联动"能力的基础上，**新增 AI 对话功能**，把一只桌面宠物升级为「桌面常驻型 AI 宠物助手」。
 
-  <p>
-    <a href="./LICENSE"><img src="https://img.shields.io/github/license/ayangweb/BongoCat?style=flat-square" /></a>
-    <a href="https://github.com/ayangweb/BongoCat/releases/latest"><img src="https://img.shields.io/github/package-json/v/ayangweb/BongoCat?style=flat-square"/></a>
-    <a href="https://github.com/ayangweb/BongoCat/releases"><img src="https://img.shields.io/github/downloads/ayangweb/BongoCat/total?style=flat-square"/></a>
-  </p>
+---
 
-  <p>
-    <a href="https://trendshift.io/developers/8507" target="_blank"><img src="https://trendshift.io/api/badge/developers/8507" alt="ayangweb | Trendshift" width="250" height="55" /></a>
-    <a href="https://trendshift.io/repositories/14605" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14605" alt="ayangweb%2FBongoCat | Trendshift" width="250" height="55" /></a>
-    <a href="https://hellogithub.com/repository/7d23863fd4be47b39e816193ded385c9" target="_blank">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=7d23863fd4be47b39e816193ded385c9&claim_uid=5ihRVIuTYBmSGtQ&theme=dark" />
-        <source media="(prefers-color-scheme: light)" srcset="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=7d23863fd4be47b39e816193ded385c9&claim_uid=5ihRVIuTYBmSGtQ&theme=neutral" />
-        <img alt="Star History Chart" src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=7d23863fd4be47b39e816193ded385c9&claim_uid=5ihRVIuTYBmSGtQ&theme=neutral" width="250" height="55" />
-      </picture>
-    </a>
-  </p>
-</div>
+## 一、项目定位
 
-| macOS                                                                                        | Windows                                                                                        | Linux(x11)                                                                                   |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| ![macOS](https://i0.hdslb.com/bfs/openplatform/dff276b96d49c5d6c431b74b531aab72191b3d87.png) | ![Windows](https://i0.hdslb.com/bfs/openplatform/a4149b753856ee7f401989da902cf3b5ad35b39e.png) | ![Linux](https://i0.hdslb.com/bfs/openplatform/3b49f961819d3ff63b2b80251c1cc13c27e986b0.png) |
+电脑端桌面常驻型 **AI 宠物助手**。用户启动后，桌面上显示一只可移动、可互动、可 DIY 外观的 Live2D 宠物；宠物在原有键鼠联动动画之外，还能与用户进行 AI 对话，并让动画状态与 AI 行为同步（思考 / 说话 / 待机等）。
 
-## 赞助商
+当前阶段（MVP）**明确不做**工具调用、不读取文件、不操作系统，只聚焦：**桌宠展示 + AI 对话 + 动画联动**，先验证产品体验闭环。
 
-<a href="https://www.toolsetlink.com">
-  <img height="54" alt="UpgradeLink" src="https://github.com/user-attachments/assets/6b84fb0f-3f1d-44b5-9932-2298bc999d8d" />
-</a>
+## 二、新增需求
 
-## 开发背景
+在原 BongoCat 功能之上，本次改造新增以下需求：
 
-本项目的灵感来源于 [MMmmmoko](https://github.com/MMmmmoko) 大佬开发的 [Bongo-Cat-Mver](https://github.com/MMmmmoko/Bongo-Cat-Mver)。它以独特的猫咪互动功能深受用户喜爱，但仅支持 Windows 平台。作为一名深度 macOS 用户，我特别希望在自己的设备上也能使用这款可爱的猫咪，于是我决定开发一个适配 macOS 的版本。
+- **聊天窗口**：独立的、透明无边框、可置顶的聊天窗口，双击桌宠即可呼出。
+- **AI 对话能力**：接入 OpenAI-compatible API，支持在设置中填写 API Key / 模型 / BaseURL，实现连续问答。
+- **流式输出**：AI 回复逐字显示，体验更自然。
+- **状态联动**：宠物动作 / 表情与 AI 状态同步——发送消息时进入「思考」，模型输出时进入「说话」，回复结束回到「待机 / 开心」。
+- **（预留）人格设定与 DIY**：通过系统 Prompt 定义宠物人格，后续扩展资源包机制。
 
-同时，得益于 [Tauri](https://github.com/tauri-apps/tauri) 强大的跨平台能力，本项目不仅支持 macOS，还兼容 Windows 和 Linux(x11)，让更多的用户都能与这只可爱的猫咪互动！
+## 三、改造方案
 
-## 下载
+### 技术路线
 
-- [夸克网盘](https://pan.quark.cn/s/70f2f2663ce1)
-- [GitHub Releases](https://github.com/ayangweb/BongoCat/releases)
+沿用 BongoCat 的 **Tauri 2 + Vue 3 + Pinia + Live2D（easy-live2d / pixi.js）** 底座（而非另起 Electron 项目），最大化复用现有的透明窗口、托盘、键鼠监听与 Live2D 渲染能力。
 
-不确定下载哪一个？请查阅[下载指南](.github/DOWNLOAD_GUIDE.md)。
+### 落地四步（纵向切片，逐步可验证）
 
-## 功能介绍
+| 步骤       | 目标     | 内容                                                                            |
+| ---------- | -------- | ------------------------------------------------------------------------------- |
+| 第 1 步 ✅ | 打通窗口 | 新增 `chat` 窗口 + 路由 `/chat` + 双击桌宠打开入口，先出一个空聊天窗            |
+| 第 2 步    | 打通 AI  | `ai.ts`（AI 客户端）+ `chat.ts`（消息 store）+ 设置页填 Key，实现**非流式**问答 |
+| 第 3 步    | 加流式   | 改为 `streamChat`，气泡逐字显示                                                 |
+| 第 4 步    | 加联动   | 通过 `usePetState` 驱动猫咪随 AI 状态切换表情 / 动作                            |
 
-- 适配 macOS、Windows 和 Linux(x11)。
-- 根据键盘、鼠标或手柄的操作，同步对应的动作。
-- 支持导入自定义模型，自由打造专属猫咪形象。
-- 完全开源，代码公开透明，绝不收集任何用户数据。
-- 支持离线运行，无需联网，保护用户隐私。
+### 关键架构说明
 
-## 模型转换
+- **多窗口通信**：聊天窗口（`chat`）与桌宠主窗口（`main`）是两个独立的 Tauri WebviewWindow，Pinia store 默认不跨窗口共享。控制 Live2D 的实例只存在于主窗口，因此「聊天触发 → 猫咪变表情」必须走 **Tauri 事件**（复用主窗口已有的 `START_MOTION` / `SET_EXPRESSION` 监听通道）。
+- **网络请求**：建议使用 `@tauri-apps/plugin-http` 从 Rust 侧发起 LLM 请求，绕开浏览器 CORS 限制并稳定支持流式响应。
+- **状态 → 表情映射**：Live2D 模型以 motion（分组）和 expression（按 index）暴露动画，需要一层 `状态(thinking/speaking/happy/idle) → expression index` 的映射配置，按所用模型实际拥有的表情来定。
+- **API Key 存储**：通过持久化 store（`@tauri-store/pinia`）保存，MVP 阶段保证不打印日志、不入库；加密存储列入后续计划。
 
-如果你想将 Bongo-Cat-Mver 应用中的模型转换为兼容 BongoCat 的格式，可以使用以下工具：
+### 数据流
 
-🔗 [在线转换](https://bongocat.vteamer.cc)
+```
+双击桌宠 / 打开聊天框
+   → 输入并发送
+   → chat.ts 接收消息，emit「思考」状态事件
+   → 主窗口播放思考动画
+   → ai.ts 调用 LLM（流式）
+   → emit「说话」状态，气泡逐字显示
+   → 回复完成，保存记录，状态回到 待机 / 开心
+```
 
-## 更多模型
+## 四、改造进度
 
-你可以在这个仓库中探索、下载更多猫咪模型，或提交你的创作，与大家一起分享：
+- [x] 第 1 步：新增 `chat` 窗口、路由、双击打开入口，搭建聊天窗口基础界面
+- [ ] 第 2 步：接入 AI，实现非流式问答
+- [ ] 第 3 步：流式输出
+- [ ] 第 4 步：宠物状态联动
 
-📦 [Awesome-BongoCat](https://github.com/ayangweb/Awesome-BongoCat)
+## 五、技术栈
 
-## 社区交流
+- **框架**：Tauri 2 + Vue 3 + TypeScript
+- **状态管理**：Pinia（`@tauri-store/pinia` 持久化）
+- **动画渲染**：easy-live2d + pixi.js（Live2D）
+- **UI**：antdv-next + UnoCSS
+- **AI**：OpenAI-compatible API（流式）
 
-<table>
-  <thead>
-    <tr>
-      <th>QQ 群 1</th>
-      <th>QQ 群 2</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <a href="https://qm.qq.com/q/AS3gNv2Vzy">
-          <picture>
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcset="https://i0.hdslb.com/bfs/openplatform/8ecdc4982ab01b59d7731fcca3ec26631a274560.png"
-            />
-            <source
-              media="(prefers-color-scheme: light)"
-              srcset="https://i0.hdslb.com/bfs/openplatform/09f56580397063e1819c4c2ed63d07dee12720e1.png"
-            />
-            <img
-              alt="QQ Group 1"
-              src="https://i0.hdslb.com/bfs/openplatform/09f56580397063e1819c4c2ed63d07dee12720e1.png"
-              height="250"
-            />
-          </picture>
-        </a>
-      </td>
-      <td>
-        <a href="https://qm.qq.com/q/TmltLAod2O">
-          <picture>
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcset="https://i0.hdslb.com/bfs/openplatform/473c522487ff33e0f32b15466aeb0734f17161c8.png"
-            />
-            <source
-              media="(prefers-color-scheme: light)"
-              srcset="https://i0.hdslb.com/bfs/openplatform/d5ae8c5af6ae1d0a1f066705ee822d1287384cf6.png"
-            />
-            <img
-              alt="QQ Group 2"
-              src="https://i0.hdslb.com/bfs/openplatform/d5ae8c5af6ae1d0a1f066705ee822d1287384cf6.png"
-              height="250"
-            />
-          </picture>
-        </a>
-      </td>
-    </tr>
-  </tbody>
-</table>
+## 六、本地开发
 
-## 赞赏
+```bash
+# 安装依赖（仅支持 pnpm）
+pnpm install
 
-每一份认可都值得被珍视！赞赏随缘，心意无价，谢谢你的支持 ❤️
+# 启动开发（首次会编译 Rust，耗时较长）
+pnpm tauri dev
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://i0.hdslb.com/bfs/openplatform/e7438bff14cdfb6bfd0feacbb482f99ea4093294.png" />
-  <source media="(prefers-color-scheme: light)" srcset="https://i0.hdslb.com/bfs/openplatform/da55cc3ec1556580c91e59f589792866c998c7c6.png" />
-  <img alt="微信赞赏码" src="https://i0.hdslb.com/bfs/openplatform/da55cc3ec1556580c91e59f589792866c998c7c6.png" height="250" />
-</picture>
+# 打包
+pnpm tauri build
+```
 
-## 贡献指南
+> macOS 首次运行需在「系统设置 → 隐私与安全性 → 辅助功能 / 输入监控」中为应用授权，宠物才能监听全局键鼠。
 
-感谢大家为 BongoCat 做出的宝贵贡献！如果你也希望为 BongoCat 做出贡献，请查阅[贡献指南](.github/CONTRIBUTING.md)。
+## 七、致谢
 
-<a href="https://openomy.com/ayangweb/BongoCat" target="_blank" style="display: block; width: 100%;" align="center">
-  <img src="https://openomy.com/svg?repo=ayangweb/BongoCat&chart=bubble" alt="Contribution Leaderboard" style="display: block; width: 100%;" />
-</a>
-
-## 历史星标
-
-<a href="https://www.star-history.com/#ayangweb/BongoCat&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ayangweb/BongoCat&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ayangweb/BongoCat&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ayangweb/BongoCat&type=Date" />
- </picture>
-</a>
+本项目基于 [ayangweb/BongoCat](https://github.com/ayangweb/BongoCat) 改造，原项目灵感来源于 [MMmmmoko/Bongo-Cat-Mver](https://github.com/MMmmmoko/Bongo-Cat-Mver)。感谢原作者们的开源贡献。原项目遵循其 [LICENSE](./LICENSE)，二次开发同样遵循该协议。
