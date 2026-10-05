@@ -139,7 +139,8 @@
         },
         "hints": {
           "appInfo": "复制软件信息并提供给 Bug Issue。",
-          "copySuccess": "复制成功"
+          "copySuccess": "复制成功",
+          "devBuild": "开发版本，已停用自动更新"
         },
         "buttons": {
           "checkUpdate": "检查更新",

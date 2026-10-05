@@ -1,12 +1,9 @@
 export const GITHUB_LINK = 'https://github.com/ayangweb/BongoCat'
 
-export const UPGRADE_LINK_ACCESS_KEY = 'xDbrq2rOoRThDqKOHL2ZRA'
-
 export const LISTEN_KEY = {
   SHOW_WINDOW: 'show-window',
   HIDE_WINDOW: 'hide-window',
   DEVICE_CHANGED: 'device-changed',
-  UPDATE_APP: 'update-app',
   GAMEPAD_CHANGED: 'gamepad-changed',
   START_MOTION: 'start-motion',
   SET_EXPRESSION: 'set-expression',

@@ -139,7 +139,8 @@
         },
         "hints": {
           "appInfo": "Copy app information and provide it to bug issue.",
-          "copySuccess": "Copied Successfully"
+          "copySuccess": "Copied Successfully",
+          "devBuild": "Development build, auto-update disabled"
         },
         "buttons": {
           "checkUpdate": "Check for Updates",

@@ -1,7 +1,6 @@
 import type { TrayIconOptions } from '@tauri-apps/api/tray'
 
 import { getName, getVersion } from '@tauri-apps/api/app'
-import { emit } from '@tauri-apps/api/event'
 import { Menu, MenuItem, PredefinedMenuItem } from '@tauri-apps/api/menu'
 import { resolveResource } from '@tauri-apps/api/path'
 import { TrayIcon } from '@tauri-apps/api/tray'
@@ -13,8 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { useCatStore } from '@/stores/cat'
 import { useGeneralStore } from '@/stores/general'
 
-import { GITHUB_LINK, LISTEN_KEY } from '../constants'
-import { showWindow } from '../plugins/window'
+import { GITHUB_LINK } from '../constants'
 import { isMac } from '../utils/platform'
 import { useAppMenu } from './useAppMenu'
 
@@ -69,14 +67,6 @@ export function useTray() {
     const items = await Promise.all([
       ...await getBaseMenu(),
       PredefinedMenuItem.new({ item: 'Separator' }),
-      MenuItem.new({
-        text: t('composables.useTray.checkUpdate'),
-        action: () => {
-          showWindow()
-
-          emit(LISTEN_KEY.UPDATE_APP)
-        },
-      }),
       MenuItem.new({
         text: t('composables.useTray.openSource'),
         action: () => openUrl(GITHUB_LINK),

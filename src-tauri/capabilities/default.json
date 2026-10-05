@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
+  "description": "Capability for the pet (main) and preference windows. These windows load Live2D models and import model folders, so they keep file-system access.",
   "windows": [
-    "*"
+    "main",
+    "preference"
   ],
   "permissions": [
     "core:default",
@@ -31,7 +32,6 @@
     },
     "pinia:default",
     "log:default",
-    "updater:default",
     "prevent-default:default",
     "autostart:default",
     "macos-permissions:default",

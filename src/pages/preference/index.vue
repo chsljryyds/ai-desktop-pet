@@ -4,7 +4,6 @@ import { Flex, Spin } from 'antdv-next'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import UpdateApp from '@/components/update-app/index.vue'
 import { useTray } from '@/composables/useTray'
 import { useAppStore } from '@/stores/app'
 import { useGeneralStore } from '@/stores/general'
@@ -118,6 +117,4 @@ const menus = computed(() => [
       <component :is="item.component" />
     </div>
   </Flex>
-
-  <UpdateApp />
 </template>
