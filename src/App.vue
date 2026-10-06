@@ -4,7 +4,7 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { error } from '@tauri-apps/plugin-log'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useEventListener } from '@vueuse/core'
-import { ConfigProvider, theme } from 'antdv-next'
+import { ConfigProvider, message, theme } from 'antdv-next'
 import { isString } from 'es-toolkit'
 import isURL from 'is-url'
 import { onMounted, watch } from 'vue'
@@ -13,7 +13,7 @@ import { RouterView } from 'vue-router'
 
 import { useTauriListen } from './composables/useTauriListen'
 import { useWindowState } from './composables/useWindowState'
-import { LANGUAGE, LISTEN_KEY } from './constants'
+import { LANGUAGE, LISTEN_KEY, WINDOW_LABEL } from './constants'
 import { getAntdLocale } from './locales/index.ts'
 import { hideWindow, showWindow } from './plugins/window'
 import { useAIStore } from './stores/ai'
@@ -21,6 +21,7 @@ import { useAppStore } from './stores/app'
 import { useCatStore } from './stores/cat'
 import { useGeneralStore } from './stores/general'
 import { useModelStore } from './stores/model'
+import { usePetStore } from './stores/pet'
 import { useShortcutStore } from './stores/shortcut.ts'
 
 const appStore = useAppStore()
@@ -29,10 +30,11 @@ const catStore = useCatStore()
 const generalStore = useGeneralStore()
 const shortcutStore = useShortcutStore()
 const aiStore = useAIStore()
+const petStore = usePetStore()
 const appWindow = getCurrentWebviewWindow()
 const { isRestored, restoreState } = useWindowState()
 const { darkAlgorithm, defaultAlgorithm } = theme
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 onMounted(async () => {
   await appStore.$tauri.start()
@@ -46,8 +48,28 @@ onMounted(async () => {
   await shortcutStore.$tauri.start()
   await aiStore.$tauri.start()
   aiStore.init()
+  await initPet()
   await restoreState()
 })
+
+async function initPet() {
+  try {
+    await petStore.$tauri.start()
+
+    if (appWindow.label !== WINDOW_LABEL.MAIN) return
+
+    const options = { locale: generalStore.appearance.language ?? LANGUAGE.EN_US }
+
+    petStore.ensureDefault({
+      name: t('stores.pet.defaultName', {}, options),
+      personality: t('stores.pet.defaultPersonality', {}, options),
+    })
+  } catch (reason) {
+    error(`pet init failed: ${String(reason)}`)
+
+    message.error(t('stores.pet.initFailed'))
+  }
+}
 
 watch(() => generalStore.appearance.language, (value) => {
   locale.value = value ?? LANGUAGE.EN_US

@@ -166,6 +166,30 @@
           "model_too_long": "The model name is too long",
           "timeout_range": "Enter whole seconds between {min} and {max}",
           "rounds_range": "Enter an integer between {min} and {max}"
+        },
+        "pet": {
+          "title": "Current Pet",
+          "notReady": "The pet profile is not ready yet. Make sure the main pet window is running.",
+          "noModel": "Not bound yet",
+          "modelMissing": "The model is unavailable, the desktop falls back to another model",
+          "presetModel": "Built-in model ({mode})",
+          "labels": {
+            "name": "Name",
+            "personality": "Personality",
+            "model": "Current appearance: {model}"
+          },
+          "hints": {
+            "name": "The pet refers to itself by this name in chat.",
+            "personality": "Sent to the model as the system prompt to describe the pet's character and tone. Changes only affect new requests."
+          },
+          "buttons": {
+            "save": "Save Pet"
+          },
+          "errors": {
+            "name_empty": "Please enter a name",
+            "name_too_long": "The name can be at most {max} characters",
+            "personality_too_long": "The personality can be at most {max} characters"
+          }
         }
       },
       "shortcut": {
@@ -247,6 +271,13 @@
     "useTray": {
       "checkUpdate": "Check for Updates",
       "openSource": "Open Source"
+    }
+  },
+  "stores": {
+    "pet": {
+      "defaultName": "Bongo",
+      "defaultPersonality": "You are a small cat living on the user's desktop. You are gentle and curious, and you reply briefly and warmly. You can only chat; you cannot operate the user's computer or files.",
+      "initFailed": "Failed to initialize the pet profile. Please restart the app and try again."
     }
   },
   "utils": {

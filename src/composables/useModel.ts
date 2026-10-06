@@ -67,7 +67,7 @@ export function useModel() {
 
   async function handleLoad() {
     try {
-      if (!modelStore.currentModel) return
+      if (!modelStore.currentModel) return false
 
       const { path } = modelStore.currentModel
 
@@ -106,8 +106,12 @@ export function useModel() {
 
         modelStore.shortcuts[id] = shortcut
       }
+
+      return true
     } catch (error) {
       message.error(String(error))
+
+      return false
     }
   }
 

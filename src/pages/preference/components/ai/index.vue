@@ -24,6 +24,8 @@ import {
 import { formatAIError } from '@/utils/ai-message'
 import { clearAIKey, getAIKey, getAIKeyStatus, setAIKey } from '@/utils/ai-secret'
 
+import PetProfile from './components/pet-profile/index.vue'
+
 const aiStore = useAIStore()
 const { t } = useI18n()
 
@@ -394,4 +396,6 @@ function handleCancelTest() {
       type="info"
     />
   </ProList>
+
+  <PetProfile />
 </template>

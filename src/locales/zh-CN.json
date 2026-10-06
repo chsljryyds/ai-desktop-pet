@@ -166,6 +166,30 @@
           "model_too_long": "模型名称过长",
           "timeout_range": "请输入 {min} 到 {max} 之间的整数秒",
           "rounds_range": "请输入 {min} 到 {max} 之间的整数"
+        },
+        "pet": {
+          "title": "当前宠物",
+          "notReady": "宠物档案尚未就绪，请确认桌宠主窗口已启动。",
+          "noModel": "尚未绑定",
+          "modelMissing": "模型已不可用，桌面将回退显示其他模型",
+          "presetModel": "内置模型（{mode}）",
+          "labels": {
+            "name": "名字",
+            "personality": "人格设定",
+            "model": "当前外观：{model}"
+          },
+          "hints": {
+            "name": "聊天时宠物会以这个名字自称。",
+            "personality": "作为系统提示发送给模型，用于描述宠物的性格和说话方式。修改只影响之后的新请求。"
+          },
+          "buttons": {
+            "save": "保存宠物"
+          },
+          "errors": {
+            "name_empty": "请填写名字",
+            "name_too_long": "名字最多 {max} 个字符",
+            "personality_too_long": "人格设定最多 {max} 个字符"
+          }
         }
       },
       "shortcut": {
@@ -247,6 +271,13 @@
     "useTray": {
       "checkUpdate": "检查更新",
       "openSource": "开源地址"
+    }
+  },
+  "stores": {
+    "pet": {
+      "defaultName": "小咪",
+      "defaultPersonality": "你是一只住在用户电脑桌面上的小猫，性格温和、好奇，说话简短亲切。你只能聊天，不能操作用户的电脑或文件。",
+      "initFailed": "宠物档案初始化失败，请重启应用后重试。"
     }
   },
   "utils": {
