@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { emit } from '@tauri-apps/api/event'
 import { useEventListener } from '@vueuse/core'
-import { Popconfirm } from 'antdv-next'
+import { Button, Flex, Popconfirm } from 'antdv-next'
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -41,6 +41,14 @@ const setupHint = computed(() => {
   }
 
   return ''
+})
+
+const status = computed(() => {
+  if (chatStore.sending) return { text: t('pages.chat.status.pending', { name: petName.value }), dot: 'bg-primary animate-pulse' }
+
+  if (setupHint.value) return { text: t('pages.chat.status.offline'), dot: 'bg-[--ant-color-warning]' }
+
+  return { text: t('pages.chat.status.online'), dot: 'bg-[--ant-color-success]' }
 })
 
 async function refreshKeyStatus() {
@@ -122,63 +130,105 @@ function handleClose() {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col overflow-hidden bg-white/90 backdrop-blur rounded-2xl dark:bg-black/80">
+  <Flex
+    class="h-screen overflow-hidden b-1 b-solid bg-container b-border-sec rounded-2xl"
+    vertical
+  >
     <div
-      class="flex items-center justify-between gap-2 border-b border-black/5 px-4 py-3 dark:border-white/10"
+      class="flex shrink-0 items-center gap-3 b-b-1 b-b-solid px-4 py-3 b-border-sec"
       data-tauri-drag-region
     >
-      <span
-        class="truncate font-bold text-sm"
+      <div
+        class="size-9 flex shrink-0 items-center justify-center bg-primary rounded-full"
         data-tauri-drag-region
       >
-        {{ $t('pages.chat.title', { name: petName }) }}
-      </span>
+        <div class="i-solar:cat-bold size-5 color-[#fff]" />
+      </div>
 
-      <div class="flex items-center gap-3">
-        <Popconfirm
-          :cancel-text="$t('pages.chat.buttons.cancel')"
-          :ok-text="$t('pages.chat.buttons.clear')"
-          :title="$t('pages.chat.hints.clearConfirm')"
-          @confirm="chatStore.clear"
+      <div
+        class="min-w-0 flex flex-1 flex-col"
+        data-tauri-drag-region
+      >
+        <span
+          class="truncate text-3.5 font-semibold color-text"
+          data-tauri-drag-region
         >
-          <div
-            class="i-solar:trash-bin-minimalistic-linear size-5 cursor-pointer text-black/40 transition dark:text-white/40 hover:text-black/70 dark:hover:text-white/70"
-            :title="$t('pages.chat.buttons.clear')"
-          />
-        </Popconfirm>
+          {{ petName || $t('pages.chat.hints.unnamed') }}
+        </span>
 
+        <span
+          class="flex items-center gap-1.5 text-3 color-text-tertiary"
+          data-tauri-drag-region
+        >
+          <span
+            class="size-1.5 rounded-full"
+            :class="status.dot"
+          />
+
+          {{ status.text }}
+        </span>
+      </div>
+
+      <Popconfirm
+        :cancel-text="$t('pages.chat.buttons.cancel')"
+        :ok-text="$t('pages.chat.buttons.clear')"
+        :title="$t('pages.chat.hints.clearConfirm')"
+        @confirm="chatStore.clear"
+      >
         <div
-          class="i-solar:close-circle-bold size-5 cursor-pointer text-black/40 transition dark:text-white/40 hover:text-black/70 dark:hover:text-white/70"
-          @click="handleClose"
-        />
+          class="size-8 flex cursor-pointer items-center justify-center transition color-text-tertiary rounded-lg hover:bg-[--ant-color-fill-secondary] hover:color-text"
+          :title="$t('pages.chat.buttons.clear')"
+        >
+          <div class="i-solar:trash-bin-minimalistic-linear size-4.5" />
+        </div>
+      </Popconfirm>
+
+      <div
+        class="size-8 flex cursor-pointer items-center justify-center transition color-text-tertiary rounded-lg hover:bg-[--ant-color-fill-secondary] hover:color-text"
+        @click="handleClose"
+      >
+        <div class="i-solar:close-circle-linear size-5" />
       </div>
     </div>
 
     <div
       v-if="setupHint"
-      class="flex items-center justify-between gap-2 bg-amber-500/10 px-4 py-2 text-amber-700 text-xs dark:text-amber-300"
+      class="flex shrink-0 items-center justify-between gap-2 b-b-1 b-[--ant-color-warning-border] b-b-solid bg-[--ant-color-warning-bg] px-4 py-2 text-3 color-[--ant-color-warning-text]"
     >
-      <span>{{ setupHint }}</span>
+      <span class="flex items-center gap-1.5">
+        <div class="i-solar:danger-circle-linear size-4 shrink-0" />
 
-      <button
-        class="text-blue-500 shrink-0 cursor-pointer border-none p-0 underline bg-transparent text-xs"
+        {{ setupHint }}
+      </span>
+
+      <Button
+        size="small"
+        type="link"
         @click="openAISettings"
       >
         {{ $t('pages.chat.buttons.openSettings') }}
-      </button>
+      </Button>
     </div>
 
     <div
       ref="list"
-      class="flex flex-1 flex-col gap-3 overflow-auto p-4"
+      class="flex flex-1 flex-col gap-4 overflow-auto bg-[--ant-color-fill-quaternary] px-4 py-4"
     >
       <div
         v-if="chatStore.messages.length === 0"
-        class="m-auto flex flex-col items-center gap-2 text-center text-black/40 dark:text-white/40"
+        class="m-auto flex flex-col items-center gap-3 text-center"
       >
-        <div class="i-solar:chat-round-line-bold size-10" />
+        <div class="size-16 flex items-center justify-center bg-[--ant-color-primary-bg] rounded-full">
+          <div class="i-solar:cat-bold size-9 color-primary" />
+        </div>
 
-        <span class="text-sm">{{ $t('pages.chat.hints.empty', { name: petName }) }}</span>
+        <span class="text-3.5 font-medium color-text-secondary">
+          {{ $t('pages.chat.hints.empty', { name: petName }) }}
+        </span>
+
+        <span class="text-3 color-text-quaternary">
+          {{ $t('pages.chat.hints.emptySub') }}
+        </span>
       </div>
 
       <template
@@ -186,84 +236,120 @@ function handleClose() {
         :key="message.id"
       >
         <div
-          class="flex flex-col gap-1"
-          :class="message.role === 'user' ? 'items-end' : 'items-start'"
+          v-if="message.role === 'user'"
+          class="flex flex-col items-end gap-1"
         >
-          <div
-            class="max-w-[85%] whitespace-pre-wrap break-words px-3 py-2 text-sm rounded-xl"
-            :class="message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-black/5 text-black/85 dark:bg-white/10 dark:text-white/85'"
-          >
+          <div class="max-w-[80%] whitespace-pre-wrap break-words px-3.5 py-2 text-3.5 color-[#fff] leading-relaxed bg-primary rounded-2xl rounded-tr-md shadow-sm">
             {{ message.content }}
           </div>
 
-          <span
-            v-if="message.truncated"
-            class="text-amber-600 text-xs"
-          >
-            {{ $t('utils.ai.truncated') }}
-          </span>
-
           <div
             v-if="message.status === 'failed' || message.status === 'cancelled'"
-            class="max-w-[85%] flex flex-wrap items-center justify-end gap-x-2 text-xs"
+            class="max-w-[85%] flex flex-wrap items-center justify-end gap-x-2 text-3"
           >
-            <span :class="message.status === 'failed' ? 'text-red-500' : 'text-black/40 dark:text-white/40'">
+            <span :class="message.status === 'failed' ? 'color-[--ant-color-error]' : 'color-text-tertiary'">
               {{ message.status === 'failed' && message.error ? formatAIError(message.error, t) : $t('pages.chat.status.cancelled') }}
             </span>
 
-            <button
-              class="text-blue-500 cursor-pointer border-none p-0 underline bg-transparent text-xs disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="chatStore.sending"
+            <span
+              class="flex cursor-pointer items-center gap-0.5 color-primary hover:opacity-80"
+              :class="{ 'pointer-events-none opacity-50': chatStore.sending }"
               @click="handleRetry(message)"
             >
+              <div class="i-solar:restart-linear size-3.5" />
+
               {{ $t('pages.chat.buttons.retry') }}
-            </button>
+            </span>
+          </div>
+        </div>
+
+        <div
+          v-else
+          class="flex items-start gap-2"
+        >
+          <div class="size-7 flex shrink-0 items-center justify-center bg-[--ant-color-primary-bg] rounded-full">
+            <div class="i-solar:cat-bold size-4 color-primary" />
+          </div>
+
+          <div class="max-w-[80%] flex flex-col gap-1">
+            <div class="whitespace-pre-wrap break-words b-1 b-solid px-3.5 py-2 text-3.5 leading-relaxed color-text bg-container b-border-sec rounded-2xl rounded-tl-md shadow-sm">
+              {{ message.content }}
+            </div>
+
+            <span
+              v-if="message.truncated"
+              class="text-3 color-[--ant-color-warning-text]"
+            >
+              {{ $t('utils.ai.truncated') }}
+            </span>
           </div>
         </div>
 
         <div
           v-if="message.status === 'pending'"
-          class="flex items-center self-start gap-2 bg-black/5 px-3 py-2 text-black/50 text-sm rounded-xl dark:bg-white/10 dark:text-white/50"
+          class="flex items-start gap-2"
         >
-          <div class="i-solar:refresh-linear size-4 animate-spin" />
+          <div class="size-7 flex shrink-0 items-center justify-center bg-[--ant-color-primary-bg] rounded-full">
+            <div class="i-solar:cat-bold size-4 color-primary" />
+          </div>
 
-          <span>{{ $t('pages.chat.status.pending', { name: petName }) }}</span>
+          <div class="flex items-center gap-1 b-1 b-solid px-4 py-3 bg-container b-border-sec rounded-2xl rounded-tl-md shadow-sm">
+            <span
+              v-for="index in 3"
+              :key="index"
+              class="size-1.5 animate-bounce bg-[--ant-color-text-quaternary] rounded-full"
+              :style="{ animationDelay: `${(index - 1) * 0.15}s` }"
+            />
+          </div>
         </div>
       </template>
     </div>
 
-    <div
-      v-if="notice"
-      class="text-red-500 px-4 pb-1 text-xs"
-    >
-      {{ notice }}
-    </div>
-
-    <div class="flex items-end gap-2 border-t border-black/5 p-3 dark:border-white/10">
-      <textarea
-        v-model="input"
-        class="focus:border-blue-400 max-h-24 min-h-9 flex-1 resize-none border-black/10 px-3 py-2 outline-none bg-transparent border text-sm rounded-lg dark:border-white/15"
-        :placeholder="$t('pages.chat.hints.placeholder', { name: petName })"
-        rows="1"
-        @keydown="handleKeydown"
-      />
-
-      <button
-        v-if="chatStore.sending"
-        class="bg-red-500 hover:bg-red-600 shrink-0 cursor-pointer border-none px-4 py-2 text-white text-sm rounded-lg"
-        @click="chatStore.cancel"
+    <div class="shrink-0 b-t-1 b-t-solid px-3 pb-3 pt-2 bg-container b-border-sec">
+      <div
+        v-if="notice"
+        class="pb-2 text-3 color-[--ant-color-error]"
       >
-        {{ $t('pages.chat.buttons.cancel') }}
-      </button>
+        {{ notice }}
+      </div>
 
-      <button
-        v-else
-        class="bg-blue-500 disabled:bg-blue-500/50 hover:bg-blue-600 shrink-0 cursor-pointer border-none px-4 py-2 text-white text-sm rounded-lg disabled:cursor-not-allowed"
-        :disabled="!input.trim()"
-        @click="handleSend"
-      >
-        {{ $t('pages.chat.buttons.send') }}
-      </button>
+      <div class="flex items-end gap-2 b-1 b-solid bg-[--ant-color-fill-quaternary] py-1.5 pl-3 pr-1.5 transition b-border rounded-2xl focus-within:b-primary">
+        <textarea
+          v-model="input"
+          class="max-h-24 min-h-6 flex-1 resize-none b-none py-1 text-3.5 leading-relaxed outline-none color-text bg-transparent placeholder:color-text-quaternary"
+          :placeholder="$t('pages.chat.hints.placeholder', { name: petName })"
+          rows="1"
+          @keydown="handleKeydown"
+        />
+
+        <Button
+          v-if="chatStore.sending"
+          danger
+          shape="circle"
+          type="primary"
+          @click="chatStore.cancel"
+        >
+          <template #icon>
+            <div class="i-solar:stop-bold m-auto size-4" />
+          </template>
+        </Button>
+
+        <Button
+          v-else
+          :disabled="!input.trim()"
+          shape="circle"
+          type="primary"
+          @click="handleSend"
+        >
+          <template #icon>
+            <div class="i-solar:plain-bold m-auto size-4" />
+          </template>
+        </Button>
+      </div>
+
+      <div class="pt-1.5 text-center text-2.75 color-text-quaternary">
+        {{ $t('pages.chat.hints.shortcut') }}
+      </div>
     </div>
-  </div>
+  </Flex>
 </template>

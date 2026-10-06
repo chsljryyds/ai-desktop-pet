@@ -219,7 +219,7 @@ function handleCancelTest() {
       <template #description>
         <div
           v-if="fieldError('baseURL')"
-          class="color-red-5"
+          class="color-[--ant-color-error]"
         >
           {{ fieldError('baseURL') }}
         </div>
@@ -248,7 +248,7 @@ function handleCancelTest() {
       <template #description>
         <div
           v-if="fieldError('model')"
-          class="color-red-5"
+          class="color-[--ant-color-error]"
         >
           {{ fieldError('model') }}
         </div>
@@ -328,7 +328,7 @@ function handleCancelTest() {
       <template #description>
         <div
           v-if="fieldError('timeoutMs')"
-          class="color-red-5"
+          class="color-[--ant-color-error]"
         >
           {{ fieldError('timeoutMs') }}
         </div>

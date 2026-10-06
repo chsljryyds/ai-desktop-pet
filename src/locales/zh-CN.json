@@ -10,7 +10,10 @@
       "title": "和{name}聊聊",
       "hints": {
         "empty": "跟{name}打个招呼吧",
-        "placeholder": "和{name}聊聊…（Enter 发送，Shift+Enter 换行）",
+        "emptySub": "聊天记录只保留在本次运行中",
+        "unnamed": "我的宠物",
+        "shortcut": "Enter 发送 · Shift + Enter 换行",
+        "placeholder": "和{name}说点什么…",
         "notConfigured": "尚未完成 AI 设置",
         "keyMissing": "本次运行还未输入 API Key",
         "petNotReady": "宠物档案尚未就绪，请确认桌宠主窗口已启动",
@@ -18,7 +21,9 @@
       },
       "status": {
         "pending": "{name}正在思考…",
-        "cancelled": "已取消"
+        "cancelled": "已取消",
+        "online": "在线",
+        "offline": "未完成设置"
       },
       "buttons": {
         "send": "发送",

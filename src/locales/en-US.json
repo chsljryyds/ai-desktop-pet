@@ -10,7 +10,10 @@
       "title": "Chat with {name}",
       "hints": {
         "empty": "Say hi to {name}",
-        "placeholder": "Chat with {name}... (Enter to send, Shift+Enter for a new line)",
+        "emptySub": "Chat history is only kept for this run",
+        "unnamed": "My Pet",
+        "shortcut": "Enter to send · Shift + Enter for a new line",
+        "placeholder": "Say something to {name}...",
         "notConfigured": "AI settings are not completed yet",
         "keyMissing": "No API key entered for this run",
         "petNotReady": "The pet profile is not ready. Make sure the main pet window is running",
@@ -18,7 +21,9 @@
       },
       "status": {
         "pending": "{name} is thinking...",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "online": "Online",
+        "offline": "Setup incomplete"
       },
       "buttons": {
         "send": "Send",
