@@ -112,6 +112,62 @@
           }
         }
       },
+      "ai": {
+        "title": "AI",
+        "labels": {
+          "connection": "Connection",
+          "baseURL": "API Base URL",
+          "model": "Model",
+          "apiKey": "API Key",
+          "requestPolicy": "Request Policy",
+          "timeout": "Request Timeout",
+          "maxContextRounds": "Context Rounds",
+          "actions": "Test and Save",
+          "testConnection": "Test Connection",
+          "privacy": "Privacy"
+        },
+        "hints": {
+          "requestURL": "Request URL: {url}",
+          "baseURL": "Enter the base path (e.g. /v1). The client appends /chat/completions and never adds /v1 automatically.",
+          "authorized": "Addresses authorized in this build: {list}. Other addresses require editing ai-network.json and rebuilding.",
+          "modelPlaceholder": "Model name from your provider",
+          "model": "Use the model name from your provider's documentation. No model name is built in.",
+          "keyPlaceholder": "Enter and click Save. The field is cleared after saving",
+          "keyMemoryOnly": "The key is kept in memory for this run only and never written to disk. Re-enter it after restarting. The key is bound to the base URL it was saved with.",
+          "maxContextRounds": "Maximum number of recent successful rounds sent with each request. This limits messages, not tokens.",
+          "testCost": "Sends one fixed short message using the current form values and may consume provider quota. Testing does not save the settings.",
+          "testSuccess": "Connected in {seconds}s. Model reply: {reply}",
+          "saveSuccess": "Saved",
+          "keyCleared": "Key cleared",
+          "keyClearedForNewURL": "The base URL changed, so the previous key was cleared. Please enter the key again.",
+          "privacy": "Base URL, model and request policy are saved locally; the API key is not written to disk. Chat content is sent to the provider you configured, and chat history is not kept across restarts."
+        },
+        "status": {
+          "keyBound": "Configured for this run",
+          "keyMismatch": "The configured key belongs to another address, re-enter it",
+          "keyNone": "Not configured"
+        },
+        "buttons": {
+          "test": "Test Connection",
+          "cancelTest": "Cancel Test",
+          "save": "Save",
+          "clearKey": "Clear Key"
+        },
+        "errors": {
+          "empty": "Please enter the API base URL",
+          "invalid": "Invalid address, a protocol such as https:// is required",
+          "protocol": "Only http and https are supported",
+          "insecure": "Non-local addresses must use https",
+          "credentials": "The address must not contain a username or password",
+          "query_or_hash": "Addresses with query parameters or # fragments are not supported",
+          "full_endpoint": "Enter the base URL without /chat/completions",
+          "not_authorized": "This address is not authorized in the current build",
+          "model_empty": "Please enter a model name",
+          "model_too_long": "The model name is too long",
+          "timeout_range": "Enter whole seconds between {min} and {max}",
+          "rounds_range": "Enter an integer between {min} and {max}"
+        }
+      },
       "shortcut": {
         "title": "Shortcuts",
         "labels": {
@@ -194,6 +250,30 @@
     }
   },
   "utils": {
+    "ai": {
+      "errors": {
+        "invalid_config": "AI settings are incomplete. Please finish them in AI settings",
+        "missing_key": "No API key configured, or the key does not match the current base URL. Please enter it in AI settings",
+        "scope_denied": "The target address is not authorized in the current build",
+        "unauthorized": "Please check your credentials or access permissions (HTTP {status})",
+        "not_found": "The API returned 404. Please check the base URL, path and model name",
+        "rate_limited": "The request may be rate limited or out of quota (HTTP 429)",
+        "context_too_long": "The content exceeds the provider's context limit. Clear the conversation or shorten the content",
+        "server_error": "Server error (HTTP {status}). Please try again later",
+        "http_error": "Request failed (HTTP {status})",
+        "network": "Network error: {cause}",
+        "timeout": "Request timed out",
+        "cancelled": "Cancelled",
+        "invalid_response": "Unsupported response format, no valid text reply found"
+      },
+      "networkCauses": {
+        "dns": "the domain name could not be resolved",
+        "tls": "TLS certificate verification failed",
+        "connect": "could not connect to the server"
+      },
+      "withDetail": "{message} (server message: {detail})",
+      "truncated": "The reply may have been cut off by a length limit."
+    },
     "live2d": {
       "hints": {
         "notFound": "Model master configuration file not found, please ensure the model files are complete."

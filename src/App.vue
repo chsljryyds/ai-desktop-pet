@@ -16,6 +16,7 @@ import { useWindowState } from './composables/useWindowState'
 import { LANGUAGE, LISTEN_KEY } from './constants'
 import { getAntdLocale } from './locales/index.ts'
 import { hideWindow, showWindow } from './plugins/window'
+import { useAIStore } from './stores/ai'
 import { useAppStore } from './stores/app'
 import { useCatStore } from './stores/cat'
 import { useGeneralStore } from './stores/general'
@@ -27,6 +28,7 @@ const modelStore = useModelStore()
 const catStore = useCatStore()
 const generalStore = useGeneralStore()
 const shortcutStore = useShortcutStore()
+const aiStore = useAIStore()
 const appWindow = getCurrentWebviewWindow()
 const { isRestored, restoreState } = useWindowState()
 const { darkAlgorithm, defaultAlgorithm } = theme
@@ -42,6 +44,8 @@ onMounted(async () => {
   await generalStore.$tauri.start()
   await generalStore.init()
   await shortcutStore.$tauri.start()
+  await aiStore.$tauri.start()
+  aiStore.init()
   await restoreState()
 })
 

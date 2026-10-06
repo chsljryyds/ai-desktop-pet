@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "ai-network",
+  "description": "HTTP access for the AI chat feature. Only the chat and preference windows may call the http plugin, and only towards the explicitly listed OpenAI-compatible endpoints below plus loopback addresses for local mock servers. Adding a new provider requires editing this file; the AI settings page cannot widen this list at runtime.",
+  "windows": [
+    "chat",
+    "preference"
+  ],
+  "permissions": [
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://api.openai.com/*" },
+        { "url": "https://api.deepseek.com/*" },
+        { "url": "https://dashscope.aliyuncs.com/*" },
+        { "url": "https://api.moonshot.cn/*" },
+        { "url": "https://open.bigmodel.cn/*" },
+        { "url": "https://api.siliconflow.cn/*" },
+        { "url": "https://ark.cn-beijing.volces.com/*" },
+        { "url": "http://127.0.0.1:*/*" },
+        { "url": "http://localhost:*/*" }
+      ]
+    }
+  ]
+}

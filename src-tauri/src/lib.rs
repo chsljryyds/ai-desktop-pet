@@ -1,6 +1,8 @@
+mod ai_secret;
 mod core;
 mod utils;
 
+use ai_secret::{AiSecretState, clear_ai_key, get_ai_key, get_ai_key_status, set_ai_key};
 use core::{
     device::start_device_listening,
     gamepad::{start_gamepad_listing, stop_gamepad_listing},
@@ -27,11 +29,16 @@ pub fn run() {
 
             Ok(())
         })
+        .manage(AiSecretState::default())
         .invoke_handler(generate_handler![
             copy_dir,
             start_device_listening,
             start_gamepad_listing,
-            stop_gamepad_listing
+            stop_gamepad_listing,
+            set_ai_key,
+            get_ai_key,
+            get_ai_key_status,
+            clear_ai_key
         ])
         .plugin(tauri_plugin_admin_status::init())
         .plugin(tauri_plugin_custom_window::init())
@@ -58,6 +65,7 @@ pub fn run() {
         .plugin(tauri_plugin_macos_permissions::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_locale::init())

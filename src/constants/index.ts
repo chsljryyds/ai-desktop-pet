@@ -7,6 +7,7 @@ export const LISTEN_KEY = {
   GAMEPAD_CHANGED: 'gamepad-changed',
   START_MOTION: 'start-motion',
   SET_EXPRESSION: 'set-expression',
+  AI_KEY_CHANGED: 'ai-key-changed',
 }
 
 export const INVOKE_KEY = {
@@ -14,6 +15,10 @@ export const INVOKE_KEY = {
   START_DEVICE_LISTENING: 'start_device_listening',
   START_GAMEPAD_LISTING: 'start_gamepad_listing',
   STOP_GAMEPAD_LISTING: 'stop_gamepad_listing',
+  SET_AI_KEY: 'set_ai_key',
+  GET_AI_KEY: 'get_ai_key',
+  GET_AI_KEY_STATUS: 'get_ai_key_status',
+  CLEAR_AI_KEY: 'clear_ai_key',
 }
 
 export const LANGUAGE = {
