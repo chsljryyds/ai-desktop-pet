@@ -47,7 +47,8 @@
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "resizable": true
+        "resizable": true,
+        "backgroundThrottling": "throttle"
       }
     ],
     "security": {

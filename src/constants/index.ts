@@ -8,6 +8,7 @@ export const LISTEN_KEY = {
   START_MOTION: 'start-motion',
   SET_EXPRESSION: 'set-expression',
   AI_KEY_CHANGED: 'ai-key-changed',
+  OPEN_PREFERENCE_TAB: 'open-preference-tab',
 }
 
 export const INVOKE_KEY = {

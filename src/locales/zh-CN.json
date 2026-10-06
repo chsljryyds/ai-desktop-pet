@@ -6,6 +6,28 @@
         "switching": "切换中..."
       }
     },
+    "chat": {
+      "title": "和{name}聊聊",
+      "hints": {
+        "empty": "跟{name}打个招呼吧",
+        "placeholder": "和{name}聊聊…（Enter 发送，Shift+Enter 换行）",
+        "notConfigured": "尚未完成 AI 设置",
+        "keyMissing": "本次运行还未输入 API Key",
+        "petNotReady": "宠物档案尚未就绪，请确认桌宠主窗口已启动",
+        "clearConfirm": "清空当前会话？进行中的请求会被取消。"
+      },
+      "status": {
+        "pending": "{name}正在思考…",
+        "cancelled": "已取消"
+      },
+      "buttons": {
+        "send": "发送",
+        "cancel": "取消",
+        "retry": "重试",
+        "clear": "清空",
+        "openSettings": "前往 AI 设置"
+      }
+    },
     "preference": {
       "title": "偏好设置",
       "cat": {
@@ -258,6 +280,7 @@
   "composables": {
     "useAppMenu": {
       "labels": {
+        "openChat": "打开聊天",
         "preference": "偏好设置...",
         "hideCat": "隐藏猫咪",
         "showCat": "显示猫咪",
@@ -278,6 +301,9 @@
       "defaultName": "小咪",
       "defaultPersonality": "你是一只住在用户电脑桌面上的小猫，性格温和、好奇，说话简短亲切。你只能聊天，不能操作用户的电脑或文件。",
       "initFailed": "宠物档案初始化失败，请重启应用后重试。"
+    },
+    "chat": {
+      "systemPrompt": "你的名字是「{name}」。{personality}"
     }
   },
   "utils": {

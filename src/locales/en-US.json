@@ -6,6 +6,28 @@
         "switching": "Switching..."
       }
     },
+    "chat": {
+      "title": "Chat with {name}",
+      "hints": {
+        "empty": "Say hi to {name}",
+        "placeholder": "Chat with {name}... (Enter to send, Shift+Enter for a new line)",
+        "notConfigured": "AI settings are not completed yet",
+        "keyMissing": "No API key entered for this run",
+        "petNotReady": "The pet profile is not ready. Make sure the main pet window is running",
+        "clearConfirm": "Clear this conversation? Any request in progress will be cancelled."
+      },
+      "status": {
+        "pending": "{name} is thinking...",
+        "cancelled": "Cancelled"
+      },
+      "buttons": {
+        "send": "Send",
+        "cancel": "Cancel",
+        "retry": "Retry",
+        "clear": "Clear",
+        "openSettings": "Open AI Settings"
+      }
+    },
     "preference": {
       "title": "Preferences",
       "cat": {
@@ -258,6 +280,7 @@
   "composables": {
     "useAppMenu": {
       "labels": {
+        "openChat": "Open Chat",
         "preference": "Preferences...",
         "hideCat": "Hide Cat",
         "showCat": "Show Cat",
@@ -278,6 +301,9 @@
       "defaultName": "Bongo",
       "defaultPersonality": "You are a small cat living on the user's desktop. You are gentle and curious, and you reply briefly and warmly. You can only chat; you cannot operate the user's computer or files.",
       "initFailed": "Failed to initialize the pet profile. Please restart the app and try again."
+    },
+    "chat": {
+      "systemPrompt": "Your name is \"{name}\". {personality}"
     }
   },
   "utils": {

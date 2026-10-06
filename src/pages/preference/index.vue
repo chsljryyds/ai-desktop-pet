@@ -4,7 +4,9 @@ import { Flex, Spin } from 'antdv-next'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useTauriListen } from '@/composables/useTauriListen'
 import { useTray } from '@/composables/useTray'
+import { LISTEN_KEY } from '@/constants'
 import { useAppStore } from '@/stores/app'
 import { useGeneralStore } from '@/stores/general'
 import { useModelStore } from '@/stores/model'
@@ -67,6 +69,12 @@ const menus = computed(() => [
     component: About,
   },
 ])
+
+useTauriListen<string>(LISTEN_KEY.OPEN_PREFERENCE_TAB, ({ payload }) => {
+  const index = menus.value.findIndex(item => item.key === payload)
+
+  if (index !== -1) current.value = index
+})
 </script>
 
 <template>
