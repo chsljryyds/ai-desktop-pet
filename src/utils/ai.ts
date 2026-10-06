@@ -40,6 +40,7 @@ export const AUTHORIZED_HTTPS_ORIGINS: readonly string[] = [
   'https://open.bigmodel.cn',
   'https://api.siliconflow.cn',
   'https://ark.cn-beijing.volces.com',
+  'https://token-plan.maas.qianwenaiapi.com',
 ]
 
 export const AUTHORIZED_LOOPBACK_HOSTS: readonly string[] = ['127.0.0.1', 'localhost']

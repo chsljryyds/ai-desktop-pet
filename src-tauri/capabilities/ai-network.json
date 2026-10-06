@@ -17,6 +17,7 @@
         { "url": "https://open.bigmodel.cn/*" },
         { "url": "https://api.siliconflow.cn/*" },
         { "url": "https://ark.cn-beijing.volces.com/*" },
+        { "url": "https://token-plan.maas.qianwenaiapi.com/*" },
         { "url": "http://127.0.0.1:*/*" },
         { "url": "http://localhost:*/*" }
       ]
