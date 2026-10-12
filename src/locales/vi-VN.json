@@ -3,7 +3,12 @@
     "main": {
       "hints": {
         "redrawing": "Đang đổi kích thước...",
-        "switching": "Đang chuyển đổi..."
+        "switching": "Đang chuyển đổi...",
+        "fellBack": "Không tải được mô hình hiện tại, đã chuyển sang mô hình tích hợp. Hồ sơ thú cưng không đổi.",
+        "loadFailed": "Không tải được mô hình nào. Hãy kiểm tra tài nguyên trong phần cài đặt, chọn lại hoặc thử lại. Hồ sơ thú cưng không bị đổi."
+      },
+      "buttons": {
+        "retryLoad": "Thử lại"
       }
     },
     "preference": {
@@ -95,6 +100,19 @@
           "deleteModel": "Bạn chắc muốn xóa mô hình này?",
           "importSuccess": "Nhập thành công",
           "clickOrDragToImport": "Nhấp hoặc kéo tệp vào đây"
+        },
+        "errors": {
+          "unauthorized_window": "Cửa sổ này không thể nhập mô hình",
+          "invalid_resource_id": "Mã mô hình không hợp lệ",
+          "source_missing": "Không tìm thấy thư mục đã chọn",
+          "source_not_directory": "Hãy chọn một thư mục mô hình",
+          "source_symlink": "Không thể nhập liên kết tượng trưng",
+          "tree_symlink": "Thư mục mô hình chứa liên kết tượng trưng nên đã bị từ chối",
+          "model_not_found": "Thư mục không có tệp mô hình có thể tải",
+          "dest_exists": "Mô hình này đã được nhập và không bị ghi đè",
+          "path_conflict": "Thư mục nguồn xung đột với thư mục mô hình",
+          "models_root_invalid": "Thư mục mô hình của ứng dụng không dùng được",
+          "import_failed": "Nhập thất bại. Danh sách mô hình không thay đổi"
         },
         "tooltips": {
           "createModel": "Tạo mô hình",

@@ -3,7 +3,12 @@
     "main": {
       "hints": {
         "redrawing": "重繪中…",
-        "switching": "切換中…"
+        "switching": "切換中…",
+        "fellBack": "目前的模型無法載入，已改顯示內建模型；寵物檔案保持不變。",
+        "loadFailed": "所有模型都無法載入。請在設定中檢查資源、重新選擇或重試。這次沒有修改寵物檔案。"
+      },
+      "buttons": {
+        "retryLoad": "重試"
       }
     },
     "preference": {
@@ -95,6 +100,19 @@
           "deleteModel": "您確定要刪除此模型嗎？",
           "importSuccess": "匯入成功",
           "clickOrDragToImport": "點擊或拖曳至此區域匯入"
+        },
+        "errors": {
+          "unauthorized_window": "目前的視窗不能匯入模型",
+          "invalid_resource_id": "模型識別不合法",
+          "source_missing": "找不到要匯入的資料夾",
+          "source_not_directory": "請選擇一個模型資料夾",
+          "source_symlink": "不能匯入符號連結",
+          "tree_symlink": "模型資料夾裡包含符號連結，已拒絕匯入",
+          "model_not_found": "資料夾裡沒有可載入的模型檔案",
+          "dest_exists": "這個模型已經匯入過，沒有覆蓋原檔案",
+          "path_conflict": "來源資料夾和模型目錄衝突，已拒絕匯入",
+          "models_root_invalid": "應用程式的模型目錄不可用",
+          "import_failed": "匯入失敗，未寫入模型列表"
         },
         "tooltips": {
           "createModel": "製作模型",

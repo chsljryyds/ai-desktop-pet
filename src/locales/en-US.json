@@ -3,7 +3,12 @@
     "main": {
       "hints": {
         "redrawing": "Redrawing...",
-        "switching": "Switching..."
+        "switching": "Switching...",
+        "fellBack": "The current model could not be loaded, so a built-in model is shown. The pet profile is unchanged.",
+        "loadFailed": "None of the models could be loaded. Check the files in Settings, choose another model, or retry. The pet profile was not changed."
+      },
+      "buttons": {
+        "retryLoad": "Retry"
       }
     },
     "chat": {
@@ -122,6 +127,19 @@
           "deleteModel": "Are you sure you want to delete this model?",
           "importSuccess": "Imported Successfully",
           "clickOrDragToImport": "Click or drag here to import"
+        },
+        "errors": {
+          "unauthorized_window": "This window cannot import models",
+          "invalid_resource_id": "The model id is not valid",
+          "source_missing": "The selected folder could not be found",
+          "source_not_directory": "Choose a model folder",
+          "source_symlink": "Symbolic links cannot be imported",
+          "tree_symlink": "The model folder contains a symbolic link, so the import was rejected",
+          "model_not_found": "The folder has no loadable model file",
+          "dest_exists": "This model was already imported and was not overwritten",
+          "path_conflict": "The source folder conflicts with the model directory",
+          "models_root_invalid": "The app model directory is not available",
+          "import_failed": "Import failed. Nothing was added to the model list"
         },
         "tooltips": {
           "createModel": "Create Model",

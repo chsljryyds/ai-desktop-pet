@@ -19,6 +19,8 @@
     "pinia:default",
     "log:default",
     "prevent-default:default",
-    "locale:default"
+    "locale:default",
+    "allow-get-ai-key",
+    "allow-get-ai-key-status"
   ]
 }

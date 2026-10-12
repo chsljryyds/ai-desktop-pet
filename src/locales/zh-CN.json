@@ -3,7 +3,12 @@
     "main": {
       "hints": {
         "redrawing": "重绘中...",
-        "switching": "切换中..."
+        "switching": "切换中...",
+        "fellBack": "当前模型无法加载，已切换为内置模型；宠物档案保持不变。",
+        "loadFailed": "所有模型都无法加载。请在设置中检查资源、重新选择或重试。本次没有修改宠物档案。"
+      },
+      "buttons": {
+        "retryLoad": "重试"
       }
     },
     "chat": {
@@ -122,6 +127,19 @@
           "deleteModel": "你确定要删除此模型吗？",
           "importSuccess": "导入成功",
           "clickOrDragToImport": "点击或拖动至此区域导入"
+        },
+        "errors": {
+          "unauthorized_window": "当前窗口不能导入模型",
+          "invalid_resource_id": "模型标识不合法",
+          "source_missing": "找不到要导入的文件夹",
+          "source_not_directory": "请选择一个模型文件夹",
+          "source_symlink": "不能导入符号链接",
+          "tree_symlink": "模型文件夹里包含符号链接，已拒绝导入",
+          "model_not_found": "文件夹里没有可加载的模型文件",
+          "dest_exists": "这个模型已经导入过，没有覆盖原文件",
+          "path_conflict": "源文件夹和模型目录冲突，已拒绝导入",
+          "models_root_invalid": "应用的模型目录不可用",
+          "import_failed": "导入失败，未写入模型列表"
         },
         "tooltips": {
           "createModel": "制作模型",

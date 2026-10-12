@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-commands",
+  "description": "Device and gamepad commands used by the pet window. The chat and preference windows do not receive them.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "allow-start-device-listening",
+    "allow-start-gamepad-listing",
+    "allow-stop-gamepad-listing"
+  ]
+}
