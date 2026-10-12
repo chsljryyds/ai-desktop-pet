@@ -1,0 +1,26 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "chat",
+  "description": "Restricted capability for the chat window. It only needs window/state/i18n basics; no file-system, dialog, shell or shortcut access. Network access is granted separately in ai-network.json.",
+  "windows": [
+    "chat"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-size",
+    "core:window:allow-set-position",
+    "core:window:allow-set-theme",
+    "core:window:allow-set-title",
+    "core:window:deny-internal-toggle-maximize",
+    "custom-window:default",
+    "os:default",
+    "opener:default",
+    "pinia:default",
+    "log:default",
+    "prevent-default:default",
+    "locale:default",
+    "allow-get-ai-key",
+    "allow-get-ai-key-status"
+  ]
+}

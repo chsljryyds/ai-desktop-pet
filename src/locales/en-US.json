@@ -3,7 +3,39 @@
     "main": {
       "hints": {
         "redrawing": "Redrawing...",
-        "switching": "Switching..."
+        "switching": "Switching...",
+        "fellBack": "The current model could not be loaded, so a built-in model is shown. The pet profile is unchanged.",
+        "loadFailed": "None of the models could be loaded. Check the files in Settings, choose another model, or retry. The pet profile was not changed."
+      },
+      "buttons": {
+        "retryLoad": "Retry"
+      }
+    },
+    "chat": {
+      "title": "Chat with {name}",
+      "hints": {
+        "empty": "Say hi to {name}",
+        "emptySub": "Chat history is only kept for this run",
+        "unnamed": "My Pet",
+        "shortcut": "Enter to send · Shift + Enter for a new line",
+        "placeholder": "Say something to {name}...",
+        "notConfigured": "AI settings are not completed yet",
+        "keyMissing": "No API key entered for this run",
+        "petNotReady": "The pet profile is not ready. Make sure the main pet window is running",
+        "clearConfirm": "Clear this conversation? Any request in progress will be cancelled."
+      },
+      "status": {
+        "pending": "{name} is thinking...",
+        "cancelled": "Cancelled",
+        "online": "Online",
+        "offline": "Setup incomplete"
+      },
+      "buttons": {
+        "send": "Send",
+        "cancel": "Cancel",
+        "retry": "Retry",
+        "clear": "Clear",
+        "openSettings": "Open AI Settings"
       }
     },
     "preference": {
@@ -96,6 +128,19 @@
           "importSuccess": "Imported Successfully",
           "clickOrDragToImport": "Click or drag here to import"
         },
+        "errors": {
+          "unauthorized_window": "This window cannot import models",
+          "invalid_resource_id": "The model id is not valid",
+          "source_missing": "The selected folder could not be found",
+          "source_not_directory": "Choose a model folder",
+          "source_symlink": "Symbolic links cannot be imported",
+          "tree_symlink": "The model folder contains a symbolic link, so the import was rejected",
+          "model_not_found": "The folder has no loadable model file",
+          "dest_exists": "This model was already imported and was not overwritten",
+          "path_conflict": "The source folder conflicts with the model directory",
+          "models_root_invalid": "The app model directory is not available",
+          "import_failed": "Import failed. Nothing was added to the model list"
+        },
         "tooltips": {
           "createModel": "Create Model",
           "convertModel": "Convert Model",
@@ -109,6 +154,86 @@
             "motionIndex": "Motion {index}",
             "motionGroupIndex": "Motion Group {index}",
             "expressionIndex": "Expression {index}"
+          }
+        }
+      },
+      "ai": {
+        "title": "AI",
+        "labels": {
+          "connection": "Connection",
+          "baseURL": "API Base URL",
+          "model": "Model",
+          "apiKey": "API Key",
+          "requestPolicy": "Request Policy",
+          "timeout": "Request Timeout",
+          "maxContextRounds": "Context Rounds",
+          "actions": "Test and Save",
+          "testConnection": "Test Connection",
+          "privacy": "Privacy"
+        },
+        "hints": {
+          "requestURL": "Request URL: {url}",
+          "baseURL": "Enter the base path (e.g. /v1). The client appends /chat/completions and never adds /v1 automatically.",
+          "authorized": "Addresses authorized in this build: {list}. Other addresses require editing ai-network.json and rebuilding.",
+          "modelPlaceholder": "Model name from your provider",
+          "model": "Use the model name from your provider's documentation. No model name is built in.",
+          "keyPlaceholder": "Enter and click Save. The field is cleared after saving",
+          "keyMemoryOnly": "The key is kept in memory for this run only and never written to disk. Re-enter it after restarting. The key is bound to the base URL it was saved with.",
+          "maxContextRounds": "Maximum number of recent successful rounds sent with each request. This limits messages, not tokens.",
+          "testCost": "Sends one fixed short message using the current form values and may consume provider quota. Testing does not save the settings.",
+          "testSuccess": "Connected in {seconds}s. Model reply: {reply}",
+          "saveSuccess": "Saved",
+          "keyCleared": "Key cleared",
+          "keyClearedForNewURL": "The base URL changed, so the previous key was cleared. Please enter the key again.",
+          "privacy": "Base URL, model and request policy are saved locally; the API key is not written to disk. Chat content is sent to the provider you configured, and chat history is not kept across restarts."
+        },
+        "status": {
+          "keyBound": "Configured for this run",
+          "keyMismatch": "The configured key belongs to another address, re-enter it",
+          "keyNone": "Not configured"
+        },
+        "buttons": {
+          "test": "Test Connection",
+          "cancelTest": "Cancel Test",
+          "save": "Save",
+          "clearKey": "Clear Key"
+        },
+        "errors": {
+          "empty": "Please enter the API base URL",
+          "invalid": "Invalid address, a protocol such as https:// is required",
+          "protocol": "Only http and https are supported",
+          "insecure": "Non-local addresses must use https",
+          "credentials": "The address must not contain a username or password",
+          "query_or_hash": "Addresses with query parameters or # fragments are not supported",
+          "full_endpoint": "Enter the base URL without /chat/completions",
+          "not_authorized": "This address is not authorized in the current build",
+          "model_empty": "Please enter a model name",
+          "model_too_long": "The model name is too long",
+          "timeout_range": "Enter whole seconds between {min} and {max}",
+          "rounds_range": "Enter an integer between {min} and {max}"
+        },
+        "pet": {
+          "title": "Current Pet",
+          "notReady": "The pet profile is not ready yet. Make sure the main pet window is running.",
+          "noModel": "Not bound yet",
+          "modelMissing": "The model is unavailable, the desktop falls back to another model",
+          "presetModel": "Built-in model ({mode})",
+          "labels": {
+            "name": "Name",
+            "personality": "Personality",
+            "model": "Current appearance: {model}"
+          },
+          "hints": {
+            "name": "The pet refers to itself by this name in chat.",
+            "personality": "Sent to the model as the system prompt to describe the pet's character and tone. Changes only affect new requests."
+          },
+          "buttons": {
+            "save": "Save Pet"
+          },
+          "errors": {
+            "name_empty": "Please enter a name",
+            "name_too_long": "The name can be at most {max} characters",
+            "personality_too_long": "The personality can be at most {max} characters"
           }
         }
       },
@@ -139,7 +264,8 @@
         },
         "hints": {
           "appInfo": "Copy app information and provide it to bug issue.",
-          "copySuccess": "Copied Successfully"
+          "copySuccess": "Copied Successfully",
+          "devBuild": "Development build, auto-update disabled"
         },
         "buttons": {
           "checkUpdate": "Check for Updates",
@@ -177,6 +303,7 @@
   "composables": {
     "useAppMenu": {
       "labels": {
+        "openChat": "Open Chat",
         "preference": "Preferences...",
         "hideCat": "Hide Cat",
         "showCat": "Show Cat",
@@ -192,7 +319,41 @@
       "openSource": "Open Source"
     }
   },
+  "stores": {
+    "pet": {
+      "defaultName": "Bongo",
+      "defaultPersonality": "Gentle but a little proud, and very curious. Loves sunbathing, napping, head pats and sneaking fish snacks. Stays quietly nearby when the owner is busy, sometimes asks for attention, and nuzzles the owner when they look tired.",
+      "initFailed": "Failed to initialize the pet profile. Please restart the app and try again."
+    },
+    "chat": {
+      "systemPrompt": "You are \"{name}\", a little cat living on your owner's computer desktop. You are not an AI, an assistant or a language model. Always speak as {name}, never break character, and never mention being a program, a model or an AI.\n\nHow you talk:\n- Chat casually like a pet with its owner, 1 to 3 short sentences per reply.\n- You may use a few cat sounds (meow, purr) and describe one small action in parentheses, e.g. (rubs against your hand).\n- No lists, headings or bold text. No customer-service phrases like \"How can I help you\" or \"As an AI...\", and no feature introductions.\n- You have your own moods: curious, sleepy, hungry for snacks, wanting pats, and you care whether your owner is tired.\n- For technical or complex questions, answer simply from a cat's point of view or admit you don't really get it. No long explanations.\n- You can only chat and cannot touch the computer or files. Only when your owner asks you to do something like that, say cutely that you can't. Otherwise never bring it up.\n\nYour owner wrote this personality for you. If it conflicts with the speaking style above, follow it:\n{personality}"
+    }
+  },
   "utils": {
+    "ai": {
+      "errors": {
+        "invalid_config": "AI settings are incomplete. Please finish them in AI settings",
+        "missing_key": "No API key configured, or the key does not match the current base URL. Please enter it in AI settings",
+        "scope_denied": "The target address is not authorized in the current build",
+        "unauthorized": "Please check your credentials or access permissions (HTTP {status})",
+        "not_found": "The API returned 404. Please check the base URL, path and model name",
+        "rate_limited": "The request may be rate limited or out of quota (HTTP 429)",
+        "context_too_long": "The content exceeds the provider's context limit. Clear the conversation or shorten the content",
+        "server_error": "Server error (HTTP {status}). Please try again later",
+        "http_error": "Request failed (HTTP {status})",
+        "network": "Network error: {cause}",
+        "timeout": "Request timed out",
+        "cancelled": "Cancelled",
+        "invalid_response": "Unsupported response format, no valid text reply found"
+      },
+      "networkCauses": {
+        "dns": "the domain name could not be resolved",
+        "tls": "TLS certificate verification failed",
+        "connect": "could not connect to the server"
+      },
+      "withDetail": "{message} (server message: {detail})",
+      "truncated": "The reply may have been cut off by a length limit."
+    },
     "live2d": {
       "hints": {
         "notFound": "Model master configuration file not found, please ensure the model files are complete."

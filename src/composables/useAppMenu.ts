@@ -63,7 +63,7 @@ export function useAppMenu() {
   const getBaseMenu = async () => {
     return await Promise.all([
       MenuItem.new({
-        text: '打开聊天',
+        text: t('composables.useAppMenu.labels.openChat'),
         action: () => showWindow(WINDOW_LABEL.CHAT),
       }),
       MenuItem.new({

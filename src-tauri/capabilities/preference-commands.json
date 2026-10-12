@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "preference-commands",
+  "description": "Model import and API key commands. Only the preference window may import models or change the key.",
+  "windows": [
+    "preference"
+  ],
+  "permissions": [
+    "allow-import-custom-model",
+    "allow-set-ai-key",
+    "allow-get-ai-key",
+    "allow-get-ai-key-status",
+    "allow-clear-ai-key"
+  ]
+}

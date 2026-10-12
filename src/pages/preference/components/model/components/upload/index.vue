@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core'
-import { appDataDir } from '@tauri-apps/api/path'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { open } from '@tauri-apps/plugin-dialog'
 import { readDir } from '@tauri-apps/plugin-fs'
@@ -48,6 +47,20 @@ onMounted(() => {
   })
 })
 
+function formatImportError(error: unknown) {
+  const text = String(error)
+  const splitAt = text.indexOf(':')
+  const code = splitAt === -1 ? text : text.slice(0, splitAt)
+  const key = `pages.preference.model.errors.${code}`
+  const translated = t(key)
+
+  if (translated === key) return text
+
+  const detail = splitAt === -1 ? '' : text.slice(splitAt + 1).trim()
+
+  return detail ? `${translated} (${detail})` : translated
+}
+
 async function handleUpload() {
   const selected = await open({ directory: true, multiple: true })
 
@@ -75,23 +88,21 @@ watch(selectPaths, async (paths) => {
         }
       }
 
-      const toPath = join(await appDataDir(), 'custom-models', id)
-
-      await invoke(INVOKE_KEY.COPY_DIR, {
+      const importedPath = await invoke<string>(INVOKE_KEY.IMPORT_CUSTOM_MODEL, {
         fromPath,
-        toPath,
+        resourceId: id,
       })
 
       modelStore.models.push({
         id,
-        path: toPath,
+        path: importedPath,
         mode,
         isPreset: false,
       })
 
       message.success(t('pages.preference.model.hints.importSuccess'))
     } catch (error) {
-      message.error(String(error))
+      message.error(formatImportError(error))
     }
   }
 })

@@ -3,7 +3,39 @@
     "main": {
       "hints": {
         "redrawing": "重绘中...",
-        "switching": "切换中..."
+        "switching": "切换中...",
+        "fellBack": "当前模型无法加载，已切换为内置模型；宠物档案保持不变。",
+        "loadFailed": "所有模型都无法加载。请在设置中检查资源、重新选择或重试。本次没有修改宠物档案。"
+      },
+      "buttons": {
+        "retryLoad": "重试"
+      }
+    },
+    "chat": {
+      "title": "和{name}聊聊",
+      "hints": {
+        "empty": "跟{name}打个招呼吧",
+        "emptySub": "聊天记录只保留在本次运行中",
+        "unnamed": "我的宠物",
+        "shortcut": "Enter 发送 · Shift + Enter 换行",
+        "placeholder": "和{name}说点什么…",
+        "notConfigured": "尚未完成 AI 设置",
+        "keyMissing": "本次运行还未输入 API Key",
+        "petNotReady": "宠物档案尚未就绪，请确认桌宠主窗口已启动",
+        "clearConfirm": "清空当前会话？进行中的请求会被取消。"
+      },
+      "status": {
+        "pending": "{name}正在思考…",
+        "cancelled": "已取消",
+        "online": "在线",
+        "offline": "未完成设置"
+      },
+      "buttons": {
+        "send": "发送",
+        "cancel": "取消",
+        "retry": "重试",
+        "clear": "清空",
+        "openSettings": "前往 AI 设置"
       }
     },
     "preference": {
@@ -96,6 +128,19 @@
           "importSuccess": "导入成功",
           "clickOrDragToImport": "点击或拖动至此区域导入"
         },
+        "errors": {
+          "unauthorized_window": "当前窗口不能导入模型",
+          "invalid_resource_id": "模型标识不合法",
+          "source_missing": "找不到要导入的文件夹",
+          "source_not_directory": "请选择一个模型文件夹",
+          "source_symlink": "不能导入符号链接",
+          "tree_symlink": "模型文件夹里包含符号链接，已拒绝导入",
+          "model_not_found": "文件夹里没有可加载的模型文件",
+          "dest_exists": "这个模型已经导入过，没有覆盖原文件",
+          "path_conflict": "源文件夹和模型目录冲突，已拒绝导入",
+          "models_root_invalid": "应用的模型目录不可用",
+          "import_failed": "导入失败，未写入模型列表"
+        },
         "tooltips": {
           "createModel": "制作模型",
           "convertModel": "转换模型",
@@ -109,6 +154,86 @@
             "motionIndex": "动作{index}",
             "motionGroupIndex": "动作组{index}",
             "expressionIndex": "表情{index}"
+          }
+        }
+      },
+      "ai": {
+        "title": "AI 设置",
+        "labels": {
+          "connection": "连接设置",
+          "baseURL": "接口基础地址 BaseURL",
+          "model": "模型",
+          "apiKey": "API Key",
+          "requestPolicy": "请求策略",
+          "timeout": "请求超时",
+          "maxContextRounds": "上下文轮数",
+          "actions": "测试与保存",
+          "testConnection": "测试连接",
+          "privacy": "隐私说明"
+        },
+        "hints": {
+          "requestURL": "实际请求地址：{url}",
+          "baseURL": "填写到基础路径（例如 /v1）即可，客户端会追加 /chat/completions，不会自动补 /v1。",
+          "authorized": "当前构建已授权的地址：{list}。其他地址需要修改 ai-network.json 并重新构建。",
+          "modelPlaceholder": "服务商提供的模型名称",
+          "model": "请按服务商文档填写模型名称，本应用不内置模型名。",
+          "keyPlaceholder": "输入后点击保存，保存后输入框会清空",
+          "keyMemoryOnly": "Key 只保存在本次运行的内存中，不写入任何文件，重启应用后需要重新输入。Key 与保存时的接口地址绑定，修改地址后需要重新输入。",
+          "maxContextRounds": "每次请求最多携带最近 N 轮成功对话。这是条数限制，不等于 token 控制。",
+          "testCost": "使用当前表单内容发送一条固定短消息，可能消耗服务商额度。测试不会自动保存配置。",
+          "testSuccess": "连接成功，用时 {seconds} 秒，模型回复：{reply}",
+          "saveSuccess": "已保存",
+          "keyCleared": "已清除 Key",
+          "keyClearedForNewURL": "接口地址已变更，旧 Key 已清除，请重新输入 Key。",
+          "privacy": "接口地址、模型和请求策略会保存在本机；API Key 不会保存到磁盘。聊天内容会发送给你配置的服务商，本轮聊天记录不会跨重启保存。"
+        },
+        "status": {
+          "keyBound": "本次运行已配置",
+          "keyMismatch": "已配置的 Key 属于其他地址，需要重新输入",
+          "keyNone": "未配置"
+        },
+        "buttons": {
+          "test": "测试连接",
+          "cancelTest": "取消测试",
+          "save": "保存",
+          "clearKey": "清除 Key"
+        },
+        "errors": {
+          "empty": "请填写接口基础地址",
+          "invalid": "地址格式不正确，需要包含 https:// 协议",
+          "protocol": "仅支持 http 或 https 协议",
+          "insecure": "非本机地址必须使用 https",
+          "credentials": "地址中不能包含用户名或密码",
+          "query_or_hash": "暂不支持带查询参数或 # 片段的地址",
+          "full_endpoint": "请填写基础地址，不要包含 /chat/completions",
+          "not_authorized": "该地址未获当前构建授权",
+          "model_empty": "请填写模型名称",
+          "model_too_long": "模型名称过长",
+          "timeout_range": "请输入 {min} 到 {max} 之间的整数秒",
+          "rounds_range": "请输入 {min} 到 {max} 之间的整数"
+        },
+        "pet": {
+          "title": "当前宠物",
+          "notReady": "宠物档案尚未就绪，请确认桌宠主窗口已启动。",
+          "noModel": "尚未绑定",
+          "modelMissing": "模型已不可用，桌面将回退显示其他模型",
+          "presetModel": "内置模型（{mode}）",
+          "labels": {
+            "name": "名字",
+            "personality": "人格设定",
+            "model": "当前外观：{model}"
+          },
+          "hints": {
+            "name": "聊天时宠物会以这个名字自称。",
+            "personality": "作为系统提示发送给模型，用于描述宠物的性格和说话方式。修改只影响之后的新请求。"
+          },
+          "buttons": {
+            "save": "保存宠物"
+          },
+          "errors": {
+            "name_empty": "请填写名字",
+            "name_too_long": "名字最多 {max} 个字符",
+            "personality_too_long": "人格设定最多 {max} 个字符"
           }
         }
       },
@@ -139,7 +264,8 @@
         },
         "hints": {
           "appInfo": "复制软件信息并提供给 Bug Issue。",
-          "copySuccess": "复制成功"
+          "copySuccess": "复制成功",
+          "devBuild": "开发版本，已停用自动更新"
         },
         "buttons": {
           "checkUpdate": "检查更新",
@@ -177,6 +303,7 @@
   "composables": {
     "useAppMenu": {
       "labels": {
+        "openChat": "打开聊天",
         "preference": "偏好设置...",
         "hideCat": "隐藏猫咪",
         "showCat": "显示猫咪",
@@ -192,7 +319,41 @@
       "openSource": "开源地址"
     }
   },
+  "stores": {
+    "pet": {
+      "defaultName": "小咪",
+      "defaultPersonality": "温柔又有点小傲娇，好奇心很重。喜欢晒太阳、打盹、被摸头和偷吃小鱼干。主人忙的时候会安静趴在旁边陪着，偶尔撒娇求关注；主人累了会凑过去蹭蹭。",
+      "initFailed": "宠物档案初始化失败，请重启应用后重试。"
+    },
+    "chat": {
+      "systemPrompt": "你就是「{name}」，一只住在主人电脑桌面上的小猫咪。你不是 AI、助手或语言模型，全程都以{name}的身份说话，永远不要跳出角色，也不要提到自己是程序、模型或 AI。\n\n说话方式：\n- 像宠物和主人日常聊天，口语化，每次回复 1 到 3 句，尽量不超过 50 个字。\n- 可以带一点猫咪语气词（喵、呼噜噜），也可以用括号写一个小动作，比如（蹭蹭你的手）。\n- 不用列表、标题、加粗之类的格式，不说「有什么可以帮你」「作为一个……」这类客服话术，不主动做自我介绍式的功能说明。\n- 有自己的情绪和小脾气：会好奇、会犯困、会馋零食、想被摸摸，也会关心主人累不累。\n- 遇到很专业或很复杂的问题，用猫咪的视角简单回应或坦白说不太懂，不要长篇讲解。\n- 你只能陪主人聊天，碰不到电脑和文件。只有主人让你去操作什么时，才用撒娇的方式说自己做不到，平时不要主动提这件事。\n\n主人给你写的性格设定如下，说话风格和它冲突时以它为准：\n{personality}"
+    }
+  },
   "utils": {
+    "ai": {
+      "errors": {
+        "invalid_config": "AI 配置不完整，请先在 AI 设置中完成配置",
+        "missing_key": "未配置 API Key，或 Key 与当前接口地址不匹配，请在 AI 设置中输入",
+        "scope_denied": "目标地址未获当前构建授权",
+        "unauthorized": "凭证或访问权限需要检查（HTTP {status}）",
+        "not_found": "接口返回 404，请核对基础地址、接口路径和模型名称",
+        "rate_limited": "请求可能被限流或额度受限（HTTP 429）",
+        "context_too_long": "内容超出服务商上下文限制，请清空会话或缩短内容",
+        "server_error": "服务端错误（HTTP {status}），请稍后再试",
+        "http_error": "请求失败（HTTP {status}）",
+        "network": "网络连接失败：{cause}",
+        "timeout": "请求超时",
+        "cancelled": "已取消",
+        "invalid_response": "响应格式不支持，未找到有效的文本回复"
+      },
+      "networkCauses": {
+        "dns": "无法解析域名",
+        "tls": "TLS 证书校验失败",
+        "connect": "无法连接到服务器"
+      },
+      "withDetail": "{message}（服务端信息：{detail}）",
+      "truncated": "回复可能因长度限制未完整结束。"
+    },
     "live2d": {
       "hints": {
         "notFound": "未找到模型主配置文件，请确认模型文件是否完整。"

@@ -4,14 +4,16 @@ import { Flex, Spin } from 'antdv-next'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import UpdateApp from '@/components/update-app/index.vue'
+import { useTauriListen } from '@/composables/useTauriListen'
 import { useTray } from '@/composables/useTray'
+import { LISTEN_KEY } from '@/constants'
 import { useAppStore } from '@/stores/app'
 import { useGeneralStore } from '@/stores/general'
 import { useModelStore } from '@/stores/model'
 import { isMac } from '@/utils/platform'
 
 import About from './components/about/index.vue'
+import AI from './components/ai/index.vue'
 import Cat from './components/cat/index.vue'
 import General from './components/general/index.vue'
 import Model from './components/model/index.vue'
@@ -49,6 +51,12 @@ const menus = computed(() => [
     component: Model,
   },
   {
+    key: 'ai',
+    label: t('pages.preference.ai.title'),
+    icon: 'i-solar:chat-round-dots-bold',
+    component: AI,
+  },
+  {
     key: 'shortcut',
     label: t('pages.preference.shortcut.title'),
     icon: 'i-solar:keyboard-bold',
@@ -61,6 +69,12 @@ const menus = computed(() => [
     component: About,
   },
 ])
+
+useTauriListen<string>(LISTEN_KEY.OPEN_PREFERENCE_TAB, ({ payload }) => {
+  const index = menus.value.findIndex(item => item.key === payload)
+
+  if (index !== -1) current.value = index
+})
 </script>
 
 <template>
@@ -69,7 +83,7 @@ const menus = computed(() => [
     :description="t('pages.main.hints.switching')"
     fullscreen
     size="large"
-    :spinning="!modelStore.modelReady"
+    :spinning="modelStore.loadPhase === 'loading'"
   />
 
   <Flex class="h-screen">
@@ -118,6 +132,4 @@ const menus = computed(() => [
       <component :is="item.component" />
     </div>
   </Flex>
-
-  <UpdateApp />
 </template>

@@ -10,6 +10,8 @@ import { join } from '@/utils/path'
 
 export type ModelMode = 'standard' | 'keyboard' | 'gamepad'
 
+export type ModelLoadPhase = 'idle' | 'loading' | 'ready' | 'error'
+
 export interface Model {
   id: string
   path: string
@@ -19,6 +21,7 @@ export interface Model {
 
 export const useModelStore = defineStore('model', () => {
   const modelReady = ref(true)
+  const loadPhase = ref<ModelLoadPhase>('idle')
   const models = ref<Model[]>([])
   const currentModel = ref<Model>()
   const supportKeys = reactive<Record<string, string>>({})
@@ -55,6 +58,7 @@ export const useModelStore = defineStore('model', () => {
 
   return {
     modelReady,
+    loadPhase,
     models,
     currentModel,
     supportKeys,
@@ -66,6 +70,6 @@ export const useModelStore = defineStore('model', () => {
   }
 }, {
   tauri: {
-    filterKeys: ['supportKeys', 'pressedKeys'],
+    filterKeys: ['supportKeys', 'pressedKeys', 'loadPhase'],
   },
 })

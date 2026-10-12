@@ -3,7 +3,12 @@
     "main": {
       "hints": {
         "redrawing": "Redimensionando...",
-        "switching": "Alternando..."
+        "switching": "Alternando...",
+        "fellBack": "O modelo atual não pôde ser carregado; um modelo integrado está sendo exibido. O perfil do pet não mudou.",
+        "loadFailed": "Nenhum modelo pôde ser carregado. Verifique os arquivos nas configurações, escolha outro ou tente de novo. O perfil do pet não foi alterado."
+      },
+      "buttons": {
+        "retryLoad": "Tentar de novo"
       }
     },
     "preference": {
@@ -95,6 +100,19 @@
           "deleteModel": "Tem certeza de que deseja excluir este modelo?",
           "importSuccess": "Importação bem-sucedida",
           "clickOrDragToImport": "Clique ou arraste para importar"
+        },
+        "errors": {
+          "unauthorized_window": "Esta janela não pode importar modelos",
+          "invalid_resource_id": "O identificador do modelo é inválido",
+          "source_missing": "A pasta selecionada não foi encontrada",
+          "source_not_directory": "Escolha uma pasta de modelo",
+          "source_symlink": "Atalhos simbólicos não podem ser importados",
+          "tree_symlink": "A pasta contém um atalho simbólico, então a importação foi recusada",
+          "model_not_found": "A pasta não tem um arquivo de modelo carregável",
+          "dest_exists": "Este modelo já foi importado e não foi substituído",
+          "path_conflict": "A pasta de origem conflita com o diretório de modelos",
+          "models_root_invalid": "O diretório de modelos do aplicativo não está disponível",
+          "import_failed": "A importação falhou. A lista de modelos não foi alterada"
         },
         "tooltips": {
           "createModel": "Criar modelo",

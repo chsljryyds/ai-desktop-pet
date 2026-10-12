@@ -39,7 +39,7 @@ function handleToggle(nextModel: Model) {
   if (modelStore.currentModel?.id === nextModel.id) return
 
   modelStore.modelReady = false
-
+  modelStore.loadPhase = 'loading'
   modelStore.currentModel = nextModel
 }
 

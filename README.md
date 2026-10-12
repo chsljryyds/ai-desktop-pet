@@ -31,7 +31,7 @@
 | 步骤       | 目标     | 内容                                                                            |
 | ---------- | -------- | ------------------------------------------------------------------------------- |
 | 第 1 步 ✅ | 打通窗口 | 新增 `chat` 窗口 + 路由 `/chat` + 双击桌宠打开入口，先出一个空聊天窗            |
-| 第 2 步    | 打通 AI  | `ai.ts`（AI 客户端）+ `chat.ts`（消息 store）+ 设置页填 Key，实现**非流式**问答 |
+| 第 2 步 ✅ | 打通 AI  | `ai.ts`（AI 客户端）+ `chat.ts`（消息 store）+ 设置页填 Key，实现**非流式**问答 |
 | 第 3 步    | 加流式   | 改为 `streamChat`，气泡逐字显示                                                 |
 | 第 4 步    | 加联动   | 通过 `usePetState` 驱动猫咪随 AI 状态切换表情 / 动作                            |
 
@@ -40,7 +40,8 @@
 - **多窗口通信**：聊天窗口（`chat`）与桌宠主窗口（`main`）是两个独立的 Tauri WebviewWindow，Pinia store 默认不跨窗口共享。控制 Live2D 的实例只存在于主窗口，因此「聊天触发 → 猫咪变表情」必须走 **Tauri 事件**（复用主窗口已有的 `START_MOTION` / `SET_EXPRESSION` 监听通道）。
 - **网络请求**：建议使用 `@tauri-apps/plugin-http` 从 Rust 侧发起 LLM 请求，绕开浏览器 CORS 限制并稳定支持流式响应。
 - **状态 → 表情映射**：Live2D 模型以 motion（分组）和 expression（按 index）暴露动画，需要一层 `状态(thinking/speaking/happy/idle) → expression index` 的映射配置，按所用模型实际拥有的表情来定。
-- **API Key 存储**：通过持久化 store（`@tauri-store/pinia`）保存，MVP 阶段保证不打印日志、不入库；加密存储列入后续计划。
+- **API Key 存储**：阶段 2 中 Key 只保存在 Rust 进程内存（`src-tauri/src/ai_secret.rs`），与保存时的接口基础地址绑定，不写入任何文件，重启应用后需要重新输入；只有 `preference` 窗口能设置 / 清除，`chat` 与 `preference` 能读取。跨重启免输入（系统凭证库）列入后续计划。
+- **网络授权**：只有 `src-tauri/capabilities/ai-network.json` 中列出的服务商地址和本机回环地址可以访问，且只授予 `chat`、`preference` 窗口；新增服务商需要修改该文件并重新构建。
 
 ### 数据流
 
@@ -57,7 +58,7 @@
 ## 四、改造进度
 
 - [x] 第 1 步：新增 `chat` 窗口、路由、双击打开入口，搭建聊天窗口基础界面
-- [ ] 第 2 步：接入 AI，实现非流式问答
+- [x] 第 2 步：接入 AI，实现非流式问答（AI 设置页与测试连接、内存 Key、最小宠物档案、非流式聊天；聊天记录本阶段不跨重启保存）
 - [ ] 第 3 步：流式输出
 - [ ] 第 4 步：宠物状态联动
 
@@ -81,6 +82,29 @@ pnpm tauri dev
 # 打包
 pnpm tauri build
 ```
+
+### 检查与测试
+
+```bash
+pnpm exec eslint src          # 代码检查（不自动修复；pnpm lint 会带 --fix 修改文件）
+pnpm typecheck                # Vue / TypeScript 类型检查（vue-tsc）
+pnpm test                     # 单元测试（vitest，网络层全部 mock，不访问真实服务商）
+pnpm build                    # 前端构建
+cargo check --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
+```
+
+### 本机 mock 联调
+
+没有真实 Key 时，可以用本地 OpenAI 兼容 mock 服务验证 AI 设置与聊天流程：
+
+```bash
+node scripts/mock-openai-server.mjs 18080
+```
+
+在 AI 设置中填写 BaseURL `http://127.0.0.1:18080/v1`、API Key `sk-mock-local-key-0000`（仅 mock 使用，非真实凭证），模型填 `mock-ok`。把模型改成 `mock-slow`、`mock-404`、`mock-429`、`mock-500`、`mock-html`、`mock-badjson`、`mock-length`、`mock-context`、`mock-redirect` 可以复现对应的异常场景。
+
+> 如果系统开启了代理（如 Clash），HTTP 插件可能会把回环地址的请求也交给代理；端口未监听时会表现为 HTTP 502。可以用 `NO_PROXY=127.0.0.1,localhost pnpm tauri dev` 启动。
 
 > macOS 首次运行需在「系统设置 → 隐私与安全性 → 辅助功能 / 输入监控」中为应用授权，宠物才能监听全局键鼠。
 
