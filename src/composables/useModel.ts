@@ -1,15 +1,16 @@
 import type { PhysicalPosition } from '@tauri-apps/api/dpi'
+import type { ExpressionInfo, MotionInfo } from 'easy-live2d'
 
 import { LogicalSize } from '@tauri-apps/api/dpi'
 import { resolveResource, sep } from '@tauri-apps/api/path'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { message } from 'antdv-next'
 import { isNil, round } from 'es-toolkit'
 import { findKey, nth } from 'es-toolkit/compat'
 import { ref } from 'vue'
 
 import { useCatStore } from '@/stores/cat'
 import { useModelStore } from '@/stores/model'
+import { createLoadGate, SupersededLoad } from '@/utils/model-recovery'
 import { getCursorMonitor } from '@/utils/monitor'
 import { isMac } from '@/utils/platform'
 
@@ -22,6 +23,45 @@ const letterKeys = 'QWERTYUIOPASDFGHJKLZXCVBNM'.split('') as readonly string[]
 export interface ModelSize {
   width: number
   height: number
+}
+
+export interface LoadedModelSnapshot {
+  width: number
+  height: number
+  motions: Record<string, MotionInfo[]>
+  expressions: ExpressionInfo[]
+}
+
+const loadGate = createLoadGate()
+
+/**
+ * Loads into the shared Live2D canvas. Calls are serialized, and a stale caller
+ * destroys the sprite it just added before the next caller paints.
+ */
+export async function loadLive2dModel(path: string, isCurrent: () => boolean): Promise<LoadedModelSnapshot> {
+  return loadGate(async () => {
+    if (!isCurrent()) throw new SupersededLoad()
+
+    await resolveResource(path)
+
+    if (!isCurrent()) throw new SupersededLoad()
+
+    try {
+      const loaded = await live2d.load(path)
+
+      if (!isCurrent()) {
+        live2d.destroy()
+        throw new SupersededLoad()
+      }
+
+      return loaded
+    } catch (error) {
+      if (error instanceof SupersededLoad) throw error
+
+      live2d.destroy()
+      throw error
+    }
+  })
 }
 
 export function useModel() {
@@ -65,54 +105,42 @@ export function useModel() {
     return `${modelId}:expression:${index}`
   }
 
-  async function handleLoad() {
-    try {
-      if (!modelStore.currentModel) return false
+  async function applyLoadedModel(modelId: string, snapshot: LoadedModelSnapshot, isCurrent: () => boolean) {
+    if (!isCurrent()) return false
 
-      const { path } = modelStore.currentModel
+    const nextMotions = Object.entries(snapshot.motions)
 
-      await resolveResource(path)
+    modelSize.value = { width: snapshot.width, height: snapshot.height }
+    modelStore.currentMotions = nextMotions
+    modelStore.currentExpressions = snapshot.expressions
 
-      const { width, height, motions, expressions } = await live2d.load(path)
+    await handleResize()
 
-      const nextMotions = Object.entries(motions)
+    if (!isCurrent()) return false
 
-      modelSize.value = { width, height }
-      modelStore.currentMotions = nextMotions
-      modelStore.currentExpressions = expressions
+    const behaviorIds: string[] = []
 
-      handleResize()
-
-      const modelId = modelStore.currentModel.id
-
-      const behaviorIds: string[] = []
-
-      for (const [groupName, items] of nextMotions) {
-        for (const [index] of items.entries()) {
-          behaviorIds.push(getMotionShortcutId(modelId, groupName, index))
-        }
+    for (const [groupName, items] of nextMotions) {
+      for (const [index] of items.entries()) {
+        behaviorIds.push(getMotionShortcutId(modelId, groupName, index))
       }
-
-      for (const [index] of expressions.entries()) {
-        behaviorIds.push(getExpressionShortcutId(modelId, index))
-      }
-
-      for (const [index, id] of behaviorIds.entries()) {
-        if (modelStore.shortcuts[id]) continue
-
-        const shortcut = getBehaviorShortcut(index)
-
-        if (!shortcut) continue
-
-        modelStore.shortcuts[id] = shortcut
-      }
-
-      return true
-    } catch (error) {
-      message.error(String(error))
-
-      return false
     }
+
+    for (const [index] of snapshot.expressions.entries()) {
+      behaviorIds.push(getExpressionShortcutId(modelId, index))
+    }
+
+    for (const [index, id] of behaviorIds.entries()) {
+      if (modelStore.shortcuts[id]) continue
+
+      const shortcut = getBehaviorShortcut(index)
+
+      if (!shortcut) continue
+
+      modelStore.shortcuts[id] = shortcut
+    }
+
+    return true
   }
 
   function handleDestroy() {
@@ -239,7 +267,7 @@ export function useModel() {
     modelSize,
     handlePress,
     handleRelease,
-    handleLoad,
+    applyLoadedModel,
     handleDestroy,
     handleResize,
     handleKeyChange,

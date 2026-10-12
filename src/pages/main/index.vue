@@ -8,14 +8,18 @@ import { sep } from '@tauri-apps/api/path'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { exists, readDir } from '@tauri-apps/plugin-fs'
 import { useDebounceFn, useEventListener } from '@vueuse/core'
+import { message } from 'antdv-next'
 import { round } from 'es-toolkit'
 import { nth } from 'es-toolkit/compat'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+import type { Model } from '@/stores/model'
 
 import { useAppMenu } from '@/composables/useAppMenu'
 import { useDevice } from '@/composables/useDevice'
 import { useGamepad } from '@/composables/useGamepad'
-import { useModel } from '@/composables/useModel'
+import { loadLive2dModel, useModel } from '@/composables/useModel'
 import { useTauriListen } from '@/composables/useTauriListen'
 import { LISTEN_KEY, WINDOW_LABEL } from '@/constants'
 import { hideWindow, setAlwaysOnTop, setTaskbarVisibility, showWindow } from '@/plugins/window'
@@ -25,13 +29,15 @@ import { useModelStore } from '@/stores/model'
 import { usePetStore } from '@/stores/pet'
 import { isImage } from '@/utils/is'
 import live2d from '@/utils/live2d'
+import { consumeSuppressedLoad, loadedModelId, recoverModelLoad } from '@/utils/model-recovery'
 import { join } from '@/utils/path'
 import { isWindows } from '@/utils/platform'
 import { clearObject } from '@/utils/shared'
 
 const { startListening } = useDevice()
 const appWindow = getCurrentWebviewWindow()
-const { modelSize, handleLoad, handleDestroy, handleResize, handleKeyChange } = useModel()
+const { t } = useI18n()
+const { modelSize, applyLoadedModel, handleDestroy, handleResize, handleKeyChange } = useModel()
 const catStore = useCatStore()
 const { getBaseMenu, getExitMenu } = useAppMenu()
 const modelStore = useModelStore()
@@ -39,6 +45,9 @@ const generalStore = useGeneralStore()
 const petStore = usePetStore()
 const resizing = ref(false)
 const backgroundImagePath = ref<string>()
+const retryToken = ref(0)
+let loadGeneration = 0
+let suppressedModelId: string | null = null
 const { stickActive } = useGamepad()
 
 onMounted(startListening)
@@ -57,38 +66,97 @@ useEventListener('resize', () => {
   debouncedResize()
 })
 
-watch(() => modelStore.currentModel, async (model) => {
-  if (!model) return
+function retryModelLoad() {
+  retryToken.value += 1
+}
 
-  const loaded = await handleLoad()
-
-  if (loaded) petStore.bindModel(model.id)
-
+async function presentModel(model: Model, isCurrent: () => boolean) {
   const path = join(model.path, 'resources', 'background.png')
-
   const existed = await exists(path)
 
-  backgroundImagePath.value = existed ? convertFileSrc(path) : void 0
+  if (!isCurrent()) return false
 
+  backgroundImagePath.value = existed ? convertFileSrc(path) : void 0
   clearObject([modelStore.supportKeys, modelStore.pressedKeys])
 
   const resourcePath = join(model.path, 'resources')
-  const groups = ['left-keys', 'right-keys']
 
-  for await (const groupName of groups) {
+  for await (const groupName of ['left-keys', 'right-keys']) {
     const groupDir = join(resourcePath, groupName)
     const files = await readDir(groupDir).catch(() => [])
-    const imageFiles = files.filter(file => isImage(file.name))
 
-    for (const file of imageFiles) {
-      const fileName = file.name.split('.')[0]
+    if (!isCurrent()) return false
 
-      modelStore.supportKeys[fileName] = join(groupDir, file.name)
+    for (const file of files.filter(item => isImage(item.name))) {
+      modelStore.supportKeys[file.name.split('.')[0]] = join(groupDir, file.name)
     }
   }
 
-  modelStore.modelReady = true
-}, { deep: true, immediate: true })
+  return true
+}
+
+watch([() => modelStore.currentModel, retryToken], async ([model]) => {
+  const decision = consumeSuppressedLoad(model?.id, suppressedModelId)
+
+  suppressedModelId = decision.suppressedId
+
+  if (!model || !decision.start) return
+
+  const token = ++loadGeneration
+  const requested = model
+  const models = modelStore.models.slice()
+  const isCurrent = () => token === loadGeneration
+
+  modelStore.loadPhase = 'loading'
+  modelStore.modelReady = false
+
+  try {
+    const outcome = await recoverModelLoad({
+      requested,
+      models,
+      isCurrent,
+      load: candidate => loadLive2dModel(candidate.path, isCurrent),
+    })
+
+    if (!isCurrent() || outcome.status === 'superseded') return
+
+    const bindId = loadedModelId(outcome)
+
+    if (!bindId || outcome.status !== 'loaded') {
+      modelStore.loadPhase = 'error'
+      modelStore.modelReady = false
+      message.error(t('pages.main.hints.loadFailed'))
+
+      return
+    }
+
+    const loaded = models.find(item => item.id === bindId) ?? requested
+    const applied = await applyLoadedModel(loaded.id, outcome.snapshot, isCurrent)
+
+    if (!applied || !isCurrent()) return
+
+    const presented = await presentModel(loaded, isCurrent)
+
+    if (!presented || !isCurrent()) return
+
+    if (modelStore.currentModel?.id !== loaded.id) {
+      suppressedModelId = loaded.id
+      modelStore.currentModel = loaded
+    }
+
+    petStore.bindModel(loaded.id)
+    modelStore.loadPhase = 'ready'
+    modelStore.modelReady = true
+
+    if (outcome.fellBack) message.info(t('pages.main.hints.fellBack'))
+  } catch {
+    if (!isCurrent()) return
+
+    modelStore.loadPhase = 'error'
+    modelStore.modelReady = false
+    message.error(t('pages.main.hints.loadFailed'))
+  }
+}, { immediate: true })
 
 watch([() => catStore.window.scale, modelSize], async ([scale, modelSize]) => {
   if (!modelSize) return
@@ -214,7 +282,25 @@ function handleMouseMove(event: MouseEvent) {
     >
 
     <div
-      v-show="resizing || !modelStore.modelReady"
+      v-if="modelStore.loadPhase === 'error' && !resizing"
+      class="flex flex-col items-center justify-center gap-4 px-6 bg-black"
+    >
+      <span class="text-center text-[4vw] text-[#fff] leading-snug">
+        {{ $t('pages.main.hints.loadFailed') }}
+      </span>
+
+      <button
+        class="cursor-pointer b-none px-4 py-2 text-[3vw] color-[#fff] bg-primary rounded-lg"
+        type="button"
+        @click.stop="retryModelLoad"
+        @mousedown.stop
+      >
+        {{ $t('pages.main.buttons.retryLoad') }}
+      </button>
+    </div>
+
+    <div
+      v-else-if="resizing || modelStore.loadPhase === 'loading'"
       class="flex items-center justify-center bg-black"
     >
       <span class="text-center text-[10vw] text-[#fff]">

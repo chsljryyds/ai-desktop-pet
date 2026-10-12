@@ -83,7 +83,7 @@ useTauriListen<string>(LISTEN_KEY.OPEN_PREFERENCE_TAB, ({ payload }) => {
     :description="t('pages.main.hints.switching')"
     fullscreen
     size="large"
-    :spinning="!modelStore.modelReady"
+    :spinning="modelStore.loadPhase === 'loading'"
   />
 
   <Flex class="h-screen">
