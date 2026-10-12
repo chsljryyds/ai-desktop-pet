@@ -32,11 +32,21 @@ export const useChatStore = defineStore('chat', () => {
   const conversationId = ref(nanoid())
   const sending = ref(false)
 
-  let activeRequestId: string | null = null
-  let controller: AbortController | null = null
+  interface RequestRun {
+    version: number
+    controller: AbortController
+    cancelled: boolean
+    userMessageId: string | null
+  }
+
+  let active: RequestRun | null = null
   let sessionVersion = 0
 
   const findMessage = (id: string) => messages.value.find(item => item.id === id)
+
+  function isCurrent(run: RequestRun) {
+    return active === run && !run.cancelled && run.version === sessionVersion
+  }
 
   function takeSnapshot(): { ok: true, config: AIConfig, pet: PetSnapshot } | { ok: false, result: SendResult } {
     const profile = petStore.profile
@@ -52,41 +62,41 @@ export const useChatStore = defineStore('chat', () => {
     return { ok: true, config: { ...validation.config }, pet }
   }
 
-  function begin() {
-    const requestId = nanoid()
+  function begin(): RequestRun {
+    const run: RequestRun = {
+      version: sessionVersion,
+      controller: new AbortController(),
+      cancelled: false,
+      userMessageId: null,
+    }
 
-    activeRequestId = requestId
+    active = run
     sending.value = true
 
-    return { requestId, version: sessionVersion }
+    return run
   }
 
-  function isStale(requestId: string, version: number) {
-    return version !== sessionVersion || activeRequestId !== requestId
-  }
+  function finish(run: RequestRun) {
+    if (active !== run) return
 
-  function finish(requestId: string) {
-    if (activeRequestId !== requestId) return
-
-    activeRequestId = null
-    controller = null
+    active = null
     sending.value = false
   }
 
-  async function execute(params: {
+  function cancelledResult(run: RequestRun): SendResult {
+    return { ok: false, reason: 'cancelled', restoreDraft: run.userMessageId === null }
+  }
+
+  async function execute(run: RequestRun, params: {
     turnId: string
     userMessageId: string
-    requestId: string
-    version: number
     config: AIConfig
     pet: PetSnapshot
     apiKey: string
   }) {
-    const { turnId, userMessageId, requestId, version, config, pet, apiKey } = params
+    const { turnId, userMessageId, config, pet, apiKey } = params
 
-    const requestController = new AbortController()
-
-    controller = requestController
+    if (!isCurrent(run)) return
 
     const context = buildContext({
       systemPrompt: buildSystemPrompt(pet),
@@ -102,10 +112,10 @@ export const useChatStore = defineStore('chat', () => {
         apiKey,
         messages: context,
         timeoutMs: config.timeoutMs,
-        signal: requestController.signal,
+        signal: run.controller.signal,
       })
 
-      if (isStale(requestId, version)) return
+      if (!isCurrent(run) || run.controller.signal.aborted) return
 
       const user = findMessage(userMessageId)
 
@@ -123,7 +133,7 @@ export const useChatStore = defineStore('chat', () => {
         truncated: result.truncated || void 0,
       })
     } catch (error) {
-      if (isStale(requestId, version)) return
+      if (!isCurrent(run) || run.controller.signal.aborted) return
 
       const info = toAIErrorInfo(error)
       const user = findMessage(userMessageId)
@@ -140,24 +150,28 @@ export const useChatStore = defineStore('chat', () => {
 
     if (!content) return { ok: false, reason: 'empty' }
 
-    if (activeRequestId) return { ok: false, reason: 'busy' }
+    if (active) return { ok: false, reason: 'busy' }
 
     const snapshot = takeSnapshot()
 
     if (!snapshot.ok) return snapshot.result
 
     const { config, pet } = snapshot
-    const { requestId, version } = begin()
+    const run = begin()
 
     try {
       const apiKey = await getAIKey(config.baseURL)
 
-      if (isStale(requestId, version)) return { ok: false, reason: 'stale' }
+      if (run.version !== sessionVersion) return { ok: false, reason: 'stale' }
+
+      if (!isCurrent(run)) return cancelledResult(run)
 
       if (!apiKey) return { ok: false, reason: 'error', error: { kind: 'missing_key' } }
 
       const turnId = nanoid()
       const userMessageId = nanoid()
+
+      run.userMessageId = userMessageId
 
       messages.value.push({
         id: userMessageId,
@@ -170,18 +184,26 @@ export const useChatStore = defineStore('chat', () => {
         createdAt: new Date().toISOString(),
       })
 
-      await execute({ turnId, userMessageId, requestId, version, config, pet, apiKey })
+      await execute(run, { turnId, userMessageId, config, pet, apiKey })
+
+      if (run.version !== sessionVersion) return { ok: false, reason: 'stale' }
+
+      if (run.cancelled || !isCurrent(run)) return cancelledResult(run)
 
       return { ok: true }
     } catch (error) {
+      if (run.version !== sessionVersion) return { ok: false, reason: 'stale' }
+
+      if (!isCurrent(run)) return cancelledResult(run)
+
       return { ok: false, reason: 'error', error: toAIErrorInfo(error) }
     } finally {
-      finish(requestId)
+      finish(run)
     }
   }
 
   async function retry(userMessageId: string): Promise<SendResult> {
-    if (activeRequestId) return { ok: false, reason: 'busy' }
+    if (active) return { ok: false, reason: 'busy' }
 
     const user = findMessage(userMessageId)
 
@@ -194,15 +216,18 @@ export const useChatStore = defineStore('chat', () => {
     if (!snapshot.ok) return snapshot.result
 
     const { config, pet } = snapshot
-    const { requestId, version } = begin()
+    const run = begin()
 
+    run.userMessageId = user.id
     user.status = 'pending'
     user.error = void 0
 
     try {
       const apiKey = await getAIKey(config.baseURL)
 
-      if (isStale(requestId, version)) return { ok: false, reason: 'stale' }
+      if (run.version !== sessionVersion) return { ok: false, reason: 'stale' }
+
+      if (!isCurrent(run)) return cancelledResult(run)
 
       if (!apiKey) {
         user.status = 'failed'
@@ -211,30 +236,59 @@ export const useChatStore = defineStore('chat', () => {
         return { ok: false, reason: 'error', error: user.error }
       }
 
-      await execute({ turnId: user.turnId, userMessageId, requestId, version, config, pet, apiKey })
+      await execute(run, { turnId: user.turnId, userMessageId, config, pet, apiKey })
+
+      if (run.version !== sessionVersion) return { ok: false, reason: 'stale' }
+
+      if (run.cancelled || !isCurrent(run)) return cancelledResult(run)
 
       return { ok: true }
     } catch (error) {
-      if (!isStale(requestId, version)) {
-        user.status = 'failed'
-        user.error = toAIErrorInfo(error)
-      }
+      if (run.version !== sessionVersion) return { ok: false, reason: 'stale' }
 
-      return { ok: false, reason: 'error', error: toAIErrorInfo(error) }
+      if (!isCurrent(run)) return cancelledResult(run)
+
+      user.status = 'failed'
+      user.error = toAIErrorInfo(error)
+
+      return { ok: false, reason: 'error', error: user.error }
     } finally {
-      finish(requestId)
+      finish(run)
     }
   }
 
   function cancel() {
-    controller?.abort()
+    const run = active
+
+    if (!run) return
+
+    run.cancelled = true
+    run.controller.abort()
+
+    if (run.userMessageId) {
+      const user = findMessage(run.userMessageId)
+
+      if (user?.status === 'pending') {
+        user.status = 'cancelled'
+        user.error = void 0
+      }
+    }
+
+    if (active === run) {
+      active = null
+      sending.value = false
+    }
   }
 
   function clear() {
     sessionVersion++
-    controller?.abort()
-    activeRequestId = null
-    controller = null
+
+    if (active) {
+      active.cancelled = true
+      active.controller.abort()
+    }
+
+    active = null
     sending.value = false
     messages.value = []
     conversationId.value = nanoid()

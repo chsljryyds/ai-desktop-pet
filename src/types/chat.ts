@@ -20,4 +20,5 @@ export interface ChatMessage {
 export type SendResult
   = | { ok: true }
     | { ok: false, reason: 'empty' | 'busy' | 'not_ready' | 'stale' }
+    | { ok: false, reason: 'cancelled', restoreDraft: boolean }
     | { ok: false, reason: 'error', error: AIErrorInfo }

@@ -1,5 +1,20 @@
 import type { AITransportMessage } from '@/types/ai'
-import type { ChatMessage } from '@/types/chat'
+import type { ChatMessage, SendResult } from '@/types/chat'
+
+/**
+ * Keeps a draft the user typed while a request was in flight.
+ * An early cancel restores the original text only when the input is still empty
+ * and the question never became a message.
+ */
+export function nextInputDraft(result: SendResult, currentInput: string, original: string) {
+  if (currentInput.length > 0) return currentInput
+
+  if (result.ok || result.reason === 'busy' || result.reason === 'stale') return ''
+
+  if (result.reason === 'cancelled') return result.restoreDraft ? original : ''
+
+  return original
+}
 
 interface BuildContextOptions {
   systemPrompt: string

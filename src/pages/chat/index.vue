@@ -17,6 +17,7 @@ import { usePetStore } from '@/stores/pet'
 import { validateAIConfig } from '@/utils/ai'
 import { formatAIError } from '@/utils/ai-message'
 import { getAIKeyStatus } from '@/utils/ai-secret'
+import { nextInputDraft } from '@/utils/chat'
 
 const chatStore = useChatStore()
 const aiStore = useAIStore()
@@ -87,9 +88,9 @@ async function handleSend() {
 
   const result = await chatStore.send(text)
 
-  if (result.ok || result.reason === 'busy' || result.reason === 'stale') return
+  input.value = nextInputDraft(result, input.value, text)
 
-  if (!input.value) input.value = text
+  if (result.ok || result.reason === 'busy' || result.reason === 'stale' || result.reason === 'cancelled') return
 
   if (result.reason === 'error') {
     notice.value = formatAIError(result.error, t)
