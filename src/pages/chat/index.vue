@@ -17,13 +17,19 @@ import { usePetStore } from '@/stores/pet'
 import { validateAIConfig } from '@/utils/ai'
 import { formatAIError } from '@/utils/ai-message'
 import { getAIKeyStatus } from '@/utils/ai-secret'
-import { nextInputDraft } from '@/utils/chat'
+import { createChatComposer, shouldSubmitOnEnter } from '@/utils/chat'
 
 const chatStore = useChatStore()
 const aiStore = useAIStore()
 const petStore = usePetStore()
 const { t } = useI18n()
 const input = ref('')
+const composer = createChatComposer({
+  read: () => input.value,
+  write: (value) => {
+    input.value = value
+  },
+})
 const notice = ref<string>()
 const keyStatus = ref<AIKeyStatus>({ configured: false, baseUrl: null })
 const listRef = useTemplateRef<HTMLElement>('list')
@@ -79,24 +85,24 @@ watch(() => chatStore.messages.map(item => item.status).join(), async () => {
 async function handleSend() {
   if (chatStore.sending) return
 
-  const text = input.value
-
-  if (!text.trim()) return
-
   notice.value = void 0
-  input.value = ''
 
-  const result = await chatStore.send(text)
+  await composer.submit(async (text, restoreDraft) => {
+    return chatStore.send(text, { onCancelDraft: restoreDraft })
+  }, (result) => {
+    if (result.ok || result.reason === 'busy' || result.reason === 'stale' || result.reason === 'cancelled') return
 
-  input.value = nextInputDraft(result, input.value, text)
+    if (result.reason === 'error') {
+      notice.value = formatAIError(result.error, t)
+    } else if (result.reason === 'not_ready') {
+      notice.value = t('pages.chat.hints.petNotReady')
+    }
+  })
+}
 
-  if (result.ok || result.reason === 'busy' || result.reason === 'stale' || result.reason === 'cancelled') return
-
-  if (result.reason === 'error') {
-    notice.value = formatAIError(result.error, t)
-  } else if (result.reason === 'not_ready') {
-    notice.value = t('pages.chat.hints.petNotReady')
-  }
+function handleClear() {
+  composer.invalidate()
+  chatStore.clear()
 }
 
 async function handleRetry(message: ChatMessage) {
@@ -110,9 +116,7 @@ async function handleRetry(message: ChatMessage) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key !== 'Enter' || event.shiftKey) return
-
-  if (event.isComposing || event.keyCode === 229) return
+  if (!shouldSubmitOnEnter(event)) return
 
   event.preventDefault()
 
@@ -174,7 +178,7 @@ function handleClose() {
         :cancel-text="$t('pages.chat.buttons.cancel')"
         :ok-text="$t('pages.chat.buttons.clear')"
         :title="$t('pages.chat.hints.clearConfirm')"
-        @confirm="chatStore.clear"
+        @confirm="handleClear"
       >
         <div
           class="size-8 flex cursor-pointer items-center justify-center transition color-text-tertiary rounded-lg hover:bg-[--ant-color-fill-secondary] hover:color-text"

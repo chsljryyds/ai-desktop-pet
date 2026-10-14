@@ -4,7 +4,8 @@ import type { ChatMessage, SendResult } from '@/types/chat'
 /**
  * Keeps a draft the user typed while a request was in flight.
  * An early cancel restores the original text only when the input is still empty
- * and the question never became a message.
+ * and the question never became a message. Callers must also check that this
+ * send still owns the input generation; an empty box alone is not enough.
  */
 export function nextInputDraft(result: SendResult, currentInput: string, original: string) {
   if (currentInput.length > 0) return currentInput
@@ -14,6 +15,60 @@ export function nextInputDraft(result: SendResult, currentInput: string, origina
   if (result.reason === 'cancelled') return result.restoreDraft ? original : ''
 
   return original
+}
+
+export function shouldSubmitOnEnter(event: { key: string, shiftKey: boolean, isComposing: boolean, keyCode?: number }) {
+  if (event.key !== 'Enter' || event.shiftKey) return false
+
+  if (event.isComposing || event.keyCode === 229) return false
+
+  return true
+}
+
+/**
+ * Owns one input box across sends. Each submit takes a generation.
+ * A later submit, typed draft, or invalidate() makes the old submit unable to write.
+ */
+export function createChatComposer(io: { read: () => string, write: (value: string) => void }) {
+  let generation = 0
+
+  function invalidate() {
+    generation += 1
+  }
+
+  async function submit(
+    dispatch: (text: string, restoreDraft: () => void) => Promise<SendResult>,
+    onSettled?: (result: SendResult) => void,
+  ) {
+    const text = io.read()
+
+    if (!text.trim()) return
+
+    const owned = ++generation
+
+    io.write('')
+
+    let consumed = false
+
+    const restoreDraft = () => {
+      if (consumed || generation !== owned || io.read().length > 0) return
+
+      consumed = true
+      io.write(text)
+    }
+
+    const result = await dispatch(text, restoreDraft)
+
+    if (generation === owned) onSettled?.(result)
+
+    if (!consumed && generation === owned && io.read().length === 0) {
+      io.write(nextInputDraft(result, '', text))
+    }
+
+    return result
+  }
+
+  return { submit, invalidate }
 }
 
 interface BuildContextOptions {

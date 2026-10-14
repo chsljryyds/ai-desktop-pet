@@ -37,6 +37,8 @@ export const useChatStore = defineStore('chat', () => {
     controller: AbortController
     cancelled: boolean
     userMessageId: string | null
+    /** Called once, synchronously, when cancel happens before a message exists. */
+    onCancelDraft?: () => void
   }
 
   let active: RequestRun | null = null
@@ -145,7 +147,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function send(text: string): Promise<SendResult> {
+  async function send(text: string, hooks?: { onCancelDraft?: () => void }): Promise<SendResult> {
     const content = text.trim()
 
     if (!content) return { ok: false, reason: 'empty' }
@@ -158,6 +160,8 @@ export const useChatStore = defineStore('chat', () => {
 
     const { config, pet } = snapshot
     const run = begin()
+
+    run.onCancelDraft = hooks?.onCancelDraft
 
     try {
       const apiKey = await getAIKey(config.baseURL)
@@ -274,10 +278,16 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
 
+    const restoreDraft = run.userMessageId ? undefined : run.onCancelDraft
+
+    run.onCancelDraft = undefined
+
     if (active === run) {
       active = null
       sending.value = false
     }
+
+    restoreDraft?.()
   }
 
   function clear() {
