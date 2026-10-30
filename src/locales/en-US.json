@@ -20,7 +20,7 @@
         "shortcut": "Enter to send · Shift + Enter for a new line",
         "placeholder": "Say something to {name}...",
         "notConfigured": "AI settings are not completed yet",
-        "keyMissing": "No API key entered for this run",
+        "keyMissing": "No API key entered yet",
         "petNotReady": "The pet profile is not ready. Make sure the main pet window is running",
         "clearConfirm": "Clear this conversation? Any request in progress will be cancelled."
       },
@@ -178,17 +178,17 @@
           "modelPlaceholder": "Model name from your provider",
           "model": "Use the model name from your provider's documentation. No model name is built in.",
           "keyPlaceholder": "Enter and click Save. The field is cleared after saving",
-          "keyMemoryOnly": "The key is kept in memory for this run only and never written to disk. Re-enter it after restarting. The key is bound to the base URL it was saved with.",
+          "keyMemoryOnly": "The key stays on this computer and is still available after you quit and reopen the app. The field is cleared after saving and never shows the saved key. It is bound to the base URL it was saved with.",
           "maxContextRounds": "Maximum number of recent successful rounds sent with each request. This limits messages, not tokens.",
           "testCost": "Sends one fixed short message using the current form values and may consume provider quota. Testing does not save the settings.",
           "testSuccess": "Connected in {seconds}s. Model reply: {reply}",
           "saveSuccess": "Saved",
           "keyCleared": "Key cleared",
           "keyClearedForNewURL": "The base URL changed, so the previous key was cleared. Please enter the key again.",
-          "privacy": "Base URL, model and request policy are saved locally; the API key is not written to disk. Chat content is sent to the provider you configured, and chat history is not kept across restarts."
+          "privacy": "Base URL, model and request policy are saved locally; the API key is stored separately in this computer's app config folder, outside the regular settings, and is still available after you reopen the app. Chat content is sent to the provider you configured, and chat history is not kept across restarts."
         },
         "status": {
-          "keyBound": "Configured for this run",
+          "keyBound": "Saved",
           "keyMismatch": "The configured key belongs to another address, re-enter it",
           "keyNone": "Not configured"
         },

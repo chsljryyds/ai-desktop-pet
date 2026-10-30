@@ -6,7 +6,7 @@ import type { AIKeyStatus } from '@/types/ai'
 import { INVOKE_KEY, LISTEN_KEY } from '@/constants'
 
 /**
- * The key only lives in the Rust process memory and is bound to one normalized base URL.
+ * The key is stored by the Rust side for this computer and is bound to one normalized base URL.
  * Change notifications carry no payload so the key never travels through events.
  */
 export async function setAIKey(baseURL: string, key: string) {
