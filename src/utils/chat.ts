@@ -27,13 +27,21 @@ export function shouldSubmitOnEnter(event: { key: string, shiftKey: boolean, isC
 
 /**
  * Owns one input box across sends. Each submit takes a generation.
- * A later submit, typed draft, or invalidate() makes the old submit unable to write.
+ * A later submit or invalidate() makes the old submit unable to write or report.
+ * markEdited() must be wired to the user's input events: once the user edits the
+ * box, even back to empty, the old submit can still report but never restores its draft.
+ * Programmatic writes do not count as edits.
  */
 export function createChatComposer(io: { read: () => string, write: (value: string) => void }) {
   let generation = 0
+  let edits = 0
 
   function invalidate() {
     generation += 1
+  }
+
+  function markEdited() {
+    edits += 1
   }
 
   async function submit(
@@ -48,10 +56,13 @@ export function createChatComposer(io: { read: () => string, write: (value: stri
 
     io.write('')
 
+    const editsAtSubmit = edits
     let consumed = false
 
+    const ownsDraft = () => !consumed && generation === owned && edits === editsAtSubmit && io.read().length === 0
+
     const restoreDraft = () => {
-      if (consumed || generation !== owned || io.read().length > 0) return
+      if (!ownsDraft()) return
 
       consumed = true
       io.write(text)
@@ -61,14 +72,14 @@ export function createChatComposer(io: { read: () => string, write: (value: stri
 
     if (generation === owned) onSettled?.(result)
 
-    if (!consumed && generation === owned && io.read().length === 0) {
+    if (ownsDraft()) {
       io.write(nextInputDraft(result, '', text))
     }
 
     return result
   }
 
-  return { submit, invalidate }
+  return { submit, invalidate, markEdited }
 }
 
 interface BuildContextOptions {

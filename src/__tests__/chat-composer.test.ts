@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { parse } from 'vue/compiler-sfc'
 
 import { useAIStore } from '@/stores/ai'
 import { useChatStore } from '@/stores/chat'
@@ -137,7 +138,10 @@ describe('chat composer and store', () => {
 
     await flush()
     input.value = '新草稿'
+    composer.markEdited()
     chat.cancel()
+    expect(input.value).toBe('新草稿')
+
     keys[0].resolve(KEY)
     await pending
 
@@ -288,6 +292,175 @@ describe('chat composer and store', () => {
     expect(chat.messages.map(item => item.content)).toEqual(['问题B', '回答B'])
     expect(chat.sending).toBe(false)
     expect(input.value).toBe('')
+  })
+})
+
+/** Same as the textarea: v-model writes the value, then @input calls markEdited(). */
+function typeInto(input: { value: string }, composer: ReturnType<typeof createChatComposer>, value: string) {
+  input.value = value
+  composer.markEdited()
+}
+
+describe('user edits while a send waits for the key', () => {
+  it.each(['resolve', 'reject'] as const)('t11 keeps a draft typed then deleted empty when cancelled, and after the key %ss', async (outcome) => {
+    const keys = deferKey()
+    const { chat, input, composer } = setup()
+
+    input.value = '问题A'
+    const pending = composer.submit((text, restoreDraft) => chat.send(text, { onCancelDraft: restoreDraft }))
+
+    await flush()
+    typeInto(input, composer, '新草稿')
+    typeInto(input, composer, '')
+    chat.cancel()
+
+    expect(chat.sending).toBe(false)
+    expect(input.value).toBe('')
+
+    if (outcome === 'resolve') keys[0].resolve(KEY)
+    else keys[0].reject(new Error('key lookup failed'))
+    await pending
+
+    expect(input.value).toBe('')
+    expect(chat.messages).toHaveLength(0)
+    expect(http.fetch).not.toHaveBeenCalled()
+  })
+
+  it('t12 still restores A at once when the user did not edit', async () => {
+    const keys = deferKey()
+    const { chat, input, composer } = setup()
+
+    input.value = '问题A'
+    const pending = composer.submit((text, restoreDraft) => chat.send(text, { onCancelDraft: restoreDraft }))
+
+    await flush()
+    chat.cancel()
+    expect(input.value).toBe('问题A')
+
+    keys[0].reject(new Error('key lookup failed'))
+    await pending
+
+    expect(input.value).toBe('问题A')
+    expect(http.fetch).not.toHaveBeenCalled()
+  })
+
+  it('t13 keeps a non-empty new draft when cancelled', async () => {
+    const keys = deferKey()
+    const { chat, input, composer } = setup()
+
+    input.value = '问题A'
+    const pending = composer.submit((text, restoreDraft) => chat.send(text, { onCancelDraft: restoreDraft }))
+
+    await flush()
+    typeInto(input, composer, '新')
+    typeInto(input, composer, '新草稿')
+    chat.cancel()
+    expect(input.value).toBe('新草稿')
+
+    keys[0].resolve(KEY)
+    await pending
+
+    expect(input.value).toBe('新草稿')
+  })
+
+  it('t14 late callbacks of a cancelled A do not touch the draft or result of B', async () => {
+    const keys = deferKey()
+    const { chat, input, composer } = setup()
+
+    input.value = '问题A'
+    const pendingA = composer.submit((text, restoreDraft) => chat.send(text, { onCancelDraft: restoreDraft }))
+
+    await flush()
+    chat.cancel()
+    expect(input.value).toBe('问题A')
+
+    typeInto(input, composer, '问题B')
+    const pendingB = composer.submit((text, restoreDraft) => chat.send(text, { onCancelDraft: restoreDraft }))
+
+    await flush()
+    keys[1].resolve(KEY)
+    ;(await waitForCall(0)).resolve('回答B')
+    await pendingB
+
+    typeInto(input, composer, '草稿C')
+    typeInto(input, composer, '')
+
+    keys[0].resolve(KEY)
+    await pendingA
+
+    expect(input.value).toBe('')
+    expect(chat.messages.map(item => item.content)).toEqual(['问题B', '回答B'])
+    expect(chat.sending).toBe(false)
+    expect(http.fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('t15 still reports a key lookup error after the user edits, but leaves the box alone', async () => {
+    const keys = deferKey()
+    const { chat, input, composer } = setup()
+    let notice = ''
+
+    input.value = '问题A'
+    const pending = composer.submit(
+      (text, restoreDraft) => chat.send(text, { onCancelDraft: restoreDraft }),
+      (result) => {
+        if (!result.ok && result.reason === 'error') notice = result.error.kind
+      },
+    )
+
+    await flush()
+    typeInto(input, composer, '草稿')
+    typeInto(input, composer, '')
+    keys[0].reject(new Error('key lookup failed'))
+    await pending
+
+    expect(notice).not.toBe('')
+    expect(input.value).toBe('')
+    expect(chat.messages).toHaveLength(0)
+    expect(http.fetch).not.toHaveBeenCalled()
+  })
+})
+
+/** Only the AST fields read below; ELEMENT and DIRECTIVE mirror NodeTypes in @vue/compiler-core. */
+interface TemplateNode {
+  type: number
+  tag?: string
+  children?: TemplateNode[]
+  props?: Array<{ type: number, name: string, arg?: { content?: string }, exp?: { content?: string } }>
+}
+
+const ELEMENT = 1
+const DIRECTIVE = 7
+
+describe('chat page wiring', () => {
+  it('t16 the textarea marks user input as an edit and binds the same input ref', () => {
+    const source = readFileSync(resolve(__dirname, '../pages/chat/index.vue'), 'utf8')
+    const { descriptor, errors } = parse(source)
+
+    expect(errors).toHaveLength(0)
+
+    const textareas: TemplateNode[] = []
+    const walk = (nodes: TemplateNode[] = []) => {
+      for (const node of nodes) {
+        if (node.type !== ELEMENT) continue
+
+        if (node.tag === 'textarea') textareas.push(node)
+
+        walk(node.children)
+      }
+    }
+
+    walk((descriptor.template!.ast as unknown as TemplateNode).children)
+    expect(textareas).toHaveLength(1)
+
+    const directives = (textareas[0].props ?? []).filter(prop => prop.type === DIRECTIVE)
+    const expOf = (name: string, arg?: string) => {
+      return directives.find(prop => prop.name === name && (!arg || prop.arg?.content === arg))?.exp?.content
+    }
+
+    expect(expOf('model')).toBe('input')
+    expect(expOf('on', 'input')).toBe('composer.markEdited()')
+    expect(source).toMatch(/createChatComposer\(\{\s*read: \(\) => input\.value,/)
+    expect(source).not.toMatch(/watch\(\s*input\b/)
   })
 })
 

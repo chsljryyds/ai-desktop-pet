@@ -324,6 +324,7 @@ function handleClose() {
           class="max-h-24 min-h-6 flex-1 resize-none b-none py-1 text-3.5 leading-relaxed outline-none color-text bg-transparent placeholder:color-text-quaternary"
           :placeholder="$t('pages.chat.hints.placeholder', { name: petName })"
           rows="1"
+          @input="composer.markEdited()"
           @keydown="handleKeydown"
         />
 
