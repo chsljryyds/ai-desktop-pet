@@ -40,7 +40,7 @@
 - **多窗口通信**：聊天窗口（`chat`）与桌宠主窗口（`main`）是两个独立的 Tauri WebviewWindow，Pinia store 默认不跨窗口共享。控制 Live2D 的实例只存在于主窗口，因此「聊天触发 → 猫咪变表情」必须走 **Tauri 事件**（复用主窗口已有的 `START_MOTION` / `SET_EXPRESSION` 监听通道）。
 - **网络请求**：建议使用 `@tauri-apps/plugin-http` 从 Rust 侧发起 LLM 请求，绕开浏览器 CORS 限制并稳定支持流式响应。
 - **状态 → 表情映射**：Live2D 模型以 motion（分组）和 expression（按 index）暴露动画，需要一层 `状态(thinking/speaking/happy/idle) → expression index` 的映射配置，按所用模型实际拥有的表情来定。
-- **API Key 存储**：Key 由 Rust 写在本机应用配置目录的 `ai-key.json`（`src-tauri/src/ai_secret.rs`），退出应用后再打开仍然有效，并与保存时的接口基础地址绑定。它不进入普通设置存档、日志或 Git。只有 `preference` 窗口能设置 / 清除，`chat` 与 `preference` 能读取。输入框在保存后仍会清空，界面不回显 Key。
+- **API Key 存储**：Key 由 Rust 存进系统凭证库（macOS 钥匙串 / Windows 凭据管理器 / Linux Secret Service，`src-tauri/src/ai_secret.rs`），退出应用后再打开仍然有效，并与保存时的接口基础地址绑定。它不写入任何普通文件，所以 `main` 窗口的文件读取权限碰不到它；应用内只有 `preference` 窗口能通过 Rust 命令设置 / 清除，`chat` 与 `preference` 能读取。早期版本留下的明文 `ai-key.json` / `ai-key.json.tmp` 会在首次读取时迁入凭证库并删除，清除 Key 时也会一并删除。注意：凭证库只隔离应用内的窗口，同一系统用户下的其他程序在 Windows / Linux 上仍可能读取该条目（macOS 钥匙串会按应用弹窗授权）。输入框在保存后仍会清空，界面不回显 Key。
 - **网络授权**：只有 `src-tauri/capabilities/ai-network.json` 中列出的服务商地址和本机回环地址可以访问，且只授予 `chat`、`preference` 窗口；新增服务商需要修改该文件并重新构建。
 
 ### 数据流
@@ -58,7 +58,7 @@
 ## 四、改造进度
 
 - [x] 第 1 步：新增 `chat` 窗口、路由、双击打开入口，搭建聊天窗口基础界面
-- [ ] 第 2 步：接入 AI，实现非流式问答（AI 设置页与测试连接、本机保存的 Key（重启后仍有效）、最小宠物档案、非流式聊天；聊天记录本阶段不跨重启保存）
+- [ ] 第 2 步：接入 AI，实现非流式问答（AI 设置页与测试连接、系统凭证库保存的 Key（重启后仍有效）、最小宠物档案、非流式聊天；聊天记录本阶段不跨重启保存）
   - 代码：已实现，自动化测试通过
   - 验收：**未正式验收通过**，桌面实机验收和真实服务商联调未完成
 - [ ] 第 3 步：流式输出（未开始）

@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{ErrorKind, Write};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -10,7 +10,9 @@ const PREFERENCE_LABEL: &str = "preference";
 const CHAT_LABEL: &str = "chat";
 const MAX_KEY_LENGTH: usize = 4096;
 const MAX_BASE_URL_LENGTH: usize = 2048;
-const SECRET_FILE: &str = "ai-key.json";
+const KEYRING_ACCOUNT: &str = "ai-api-key";
+/// Plaintext files written by an earlier build. They are migrated once and then deleted.
+const LEGACY_FILES: [&str; 2] = ["ai-key.json", "ai-key.json.tmp"];
 
 struct AiSecret {
     base_url: String,
@@ -23,30 +25,62 @@ struct StoredSecret {
     key: String,
 }
 
+#[derive(Default)]
 struct SecretCache {
     loaded: bool,
     secret: Option<AiSecret>,
 }
 
-/// API key for this computer. The file is the source of truth across restarts.
+/// API key kept in the system credential store (macOS Keychain, Windows Credential Manager,
+/// Linux Secret Service), never in a file the webview file APIs can reach.
+/// Only the Rust commands below read it, and they check the calling window.
 /// The cache is not `Debug` or `Serialize`, so the key cannot leak through logs.
 #[derive(Default)]
 pub struct AiSecretState(Mutex<SecretCache>);
-
-impl Default for SecretCache {
-    fn default() -> Self {
-        Self {
-            loaded: false,
-            secret: None,
-        }
-    }
-}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiKeyStatus {
     configured: bool,
     base_url: Option<String>,
+}
+
+/// One credential slot. Errors carry no detail so nothing about the key can be echoed.
+trait SecretStore {
+    fn read(&self) -> Result<Option<String>, ()>;
+    fn write(&self, payload: &str) -> Result<(), ()>;
+    fn delete(&self) -> Result<(), ()>;
+}
+
+struct KeyringStore(keyring::Entry);
+
+impl KeyringStore {
+    fn open(app: &AppHandle) -> Result<Self, String> {
+        keyring::Entry::new(&app.config().identifier, KEYRING_ACCOUNT)
+            .map(Self)
+            .map_err(|_| storage_error())
+    }
+}
+
+impl SecretStore for KeyringStore {
+    fn read(&self) -> Result<Option<String>, ()> {
+        match self.0.get_password() {
+            Ok(payload) => Ok(Some(payload)),
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(_) => Err(()),
+        }
+    }
+
+    fn write(&self, payload: &str) -> Result<(), ()> {
+        self.0.set_password(payload).map_err(|_| ())
+    }
+
+    fn delete(&self) -> Result<(), ()> {
+        match self.0.delete_credential() {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+            Err(_) => Err(()),
+        }
+    }
 }
 
 fn ensure_label(label: &str, allowed: &[&str]) -> Result<(), String> {
@@ -91,101 +125,98 @@ fn storage_error() -> String {
     "AI key storage unavailable".into()
 }
 
-fn secret_path(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_config_dir().map_err(|_| storage_error())?;
-
-    fs::create_dir_all(&dir).map_err(|_| storage_error())?;
-
-    Ok(dir.join(SECRET_FILE))
+fn config_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path().app_config_dir().map_err(|_| storage_error())
 }
 
-fn read_secret(path: &Path) -> Result<Option<AiSecret>, String> {
-    let bytes = match fs::read(path) {
-        Ok(bytes) => bytes,
-        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(None),
-        Err(_) => return Err(storage_error()),
-    };
-
-    let stored: StoredSecret = match serde_json::from_slice(&bytes) {
-        Ok(stored) => stored,
-        Err(_) => return Ok(None),
-    };
+/// Damaged or invalid content reads as no key, without reporting what was there.
+fn parse_secret(payload: &[u8]) -> Option<AiSecret> {
+    let stored: StoredSecret = serde_json::from_slice(payload).ok()?;
 
     if validate_base_url(&stored.base_url).is_err() || validate_key(&stored.key).is_err() {
-        return Ok(None);
+        return None;
     }
 
-    Ok(Some(AiSecret {
+    Some(AiSecret {
         base_url: stored.base_url,
         key: stored.key,
-    }))
+    })
 }
 
-fn write_secret(path: &Path, secret: &AiSecret) -> Result<(), String> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|_| storage_error())?;
-    }
-
-    let payload = serde_json::to_vec(&StoredSecret {
+fn encode_secret(secret: &AiSecret) -> Result<String, String> {
+    serde_json::to_string(&StoredSecret {
         base_url: secret.base_url.clone(),
         key: secret.key.clone(),
     })
-    .map_err(|_| storage_error())?;
+    .map_err(|_| storage_error())
+}
 
-    let temporary = path.with_extension("json.tmp");
+fn read_legacy(dir: &Path) -> Option<AiSecret> {
+    LEGACY_FILES
+        .iter()
+        .find_map(|name| fs::read(dir.join(name)).ok().and_then(|bytes| parse_secret(&bytes)))
+}
 
-    remove_secret(&temporary)?;
-
-    if create_private(&temporary, &payload).is_err() || fs::rename(&temporary, path).is_err() {
-        let _ = fs::remove_file(&temporary);
-
-        return Err(storage_error());
+fn remove_legacy(dir: &Path) -> Result<(), String> {
+    for name in LEGACY_FILES {
+        match fs::remove_file(dir.join(name)) {
+            Ok(()) => {}
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(_) => return Err(storage_error()),
+        }
     }
 
     Ok(())
 }
 
-/// Creates the file owner-only from the start, so the key is never readable by other users.
-fn create_private(path: &Path, payload: &[u8]) -> std::io::Result<()> {
-    let mut options = fs::OpenOptions::new();
+/// Reads the stored key. A key found only in a legacy plaintext file is moved into the store;
+/// the files are deleted once the store holds the key. If the store cannot be written, the
+/// files are kept so the key is not lost, and an error is returned.
+fn load_secret(store: &dyn SecretStore, legacy_dir: &Path) -> Result<Option<AiSecret>, String> {
+    let stored = store.read().map_err(|_| storage_error())?;
+    let mut secret = stored.as_deref().and_then(|payload| parse_secret(payload.as_bytes()));
 
-    options.write(true).create_new(true);
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-
-        options.mode(0o600);
-    }
-
-    options.open(path)?.write_all(payload)
-}
-
-fn remove_secret(path: &Path) -> Result<(), String> {
-    match fs::remove_file(path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
-        Err(_) => Err(storage_error()),
-    }
-}
-
-fn load(app: &AppHandle, state: &AiSecretState) -> Result<(), String> {
-    {
-        let cache = state.0.lock().map_err(|_| storage_error())?;
-
-        if cache.loaded {
-            return Ok(());
+    if secret.is_none() {
+        if let Some(legacy) = read_legacy(legacy_dir) {
+            store
+                .write(&encode_secret(&legacy)?)
+                .map_err(|_| storage_error())?;
+            secret = Some(legacy);
         }
     }
 
-    let secret = read_secret(&secret_path(app)?)?;
+    remove_legacy(legacy_dir)?;
+
+    Ok(secret)
+}
+
+fn save_secret(store: &dyn SecretStore, legacy_dir: &Path, secret: &AiSecret) -> Result<(), String> {
+    store
+        .write(&encode_secret(secret)?)
+        .map_err(|_| storage_error())?;
+
+    remove_legacy(legacy_dir)
+}
+
+/// Removes the key from the store and every plaintext copy an earlier build may have left,
+/// including a temp file from a write that was interrupted before its rename.
+/// The files are removed even when the store fails, so clearing never leaves plaintext behind.
+fn clear_secret(store: &dyn SecretStore, legacy_dir: &Path) -> Result<(), String> {
+    let deleted = store.delete();
+
+    remove_legacy(legacy_dir)?;
+
+    deleted.map_err(|_| storage_error())
+}
+
+fn load(app: &AppHandle, state: &AiSecretState) -> Result<(), String> {
     let mut cache = state.0.lock().map_err(|_| storage_error())?;
 
     if cache.loaded {
         return Ok(());
     }
 
-    cache.secret = secret;
+    cache.secret = load_secret(&KeyringStore::open(app)?, &config_dir(app)?)?;
     cache.loaded = true;
 
     Ok(())
@@ -205,7 +236,7 @@ pub fn set_ai_key(
 
     let secret = AiSecret { base_url, key };
 
-    write_secret(&secret_path(&app)?, &secret)?;
+    save_secret(&KeyringStore::open(&app)?, &config_dir(&app)?, &secret)?;
 
     let mut cache = state.0.lock().map_err(|_| storage_error())?;
 
@@ -258,8 +289,7 @@ pub fn clear_ai_key(
     state: State<'_, AiSecretState>,
 ) -> Result<(), String> {
     ensure_label(webview_window.label(), &[PREFERENCE_LABEL])?;
-    load(&app, &state)?;
-    remove_secret(&secret_path(&app)?)?;
+    clear_secret(&KeyringStore::open(&app)?, &config_dir(&app)?)?;
 
     let mut cache = state.0.lock().map_err(|_| storage_error())?;
 
@@ -271,13 +301,48 @@ pub fn clear_ai_key(
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+
     use super::*;
 
-    fn temp_secret(name: &str) -> PathBuf {
-        let mut path = std::env::temp_dir();
+    const KEY: &str = "sk-persist-0000";
+    const BASE: &str = "https://api.example.com/v1";
 
-        path.push(format!(
-            "bongo-ai-key-{}-{}-{name}.json",
+    #[derive(Default)]
+    struct MemoryStore {
+        payload: RefCell<Option<String>>,
+        broken: bool,
+    }
+
+    impl SecretStore for MemoryStore {
+        fn read(&self) -> Result<Option<String>, ()> {
+            if self.broken { Err(()) } else { Ok(self.payload.borrow().clone()) }
+        }
+
+        fn write(&self, payload: &str) -> Result<(), ()> {
+            if self.broken {
+                return Err(());
+            }
+
+            *self.payload.borrow_mut() = Some(payload.into());
+
+            Ok(())
+        }
+
+        fn delete(&self) -> Result<(), ()> {
+            if self.broken {
+                return Err(());
+            }
+
+            *self.payload.borrow_mut() = None;
+
+            Ok(())
+        }
+    }
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "bongo-ai-key-{}-{}-{name}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -285,7 +350,28 @@ mod tests {
                 .as_nanos()
         ));
 
-        path
+        fs::create_dir_all(&dir).unwrap();
+
+        dir
+    }
+
+    fn secret() -> AiSecret {
+        AiSecret {
+            base_url: BASE.into(),
+            key: KEY.into(),
+        }
+    }
+
+    fn write_legacy(dir: &Path) {
+        let payload = encode_secret(&secret()).unwrap();
+
+        for name in LEGACY_FILES {
+            fs::write(dir.join(name), &payload).unwrap();
+        }
+    }
+
+    fn legacy_left(dir: &Path) -> Vec<&'static str> {
+        LEGACY_FILES.into_iter().filter(|name| dir.join(name).exists()).collect()
     }
 
     #[test]
@@ -325,73 +411,153 @@ mod tests {
     }
 
     #[test]
-    fn saved_key_can_be_read_after_the_cache_is_gone() {
-        let path = temp_secret("roundtrip");
-        let secret = AiSecret {
-            base_url: "https://api.example.com/v1".into(),
-            key: "sk-persist-0000".into(),
+    fn saved_key_lives_in_the_store_and_not_in_a_file() {
+        let dir = temp_dir("roundtrip");
+        let store = MemoryStore::default();
+
+        save_secret(&store, &dir, &secret()).unwrap();
+
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);
+
+        let restored = load_secret(&store, &dir).unwrap().expect("stored key");
+
+        assert_eq!(restored.base_url, BASE);
+        assert_eq!(restored.key, KEY);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn clear_removes_the_store_entry_and_both_legacy_files() {
+        let dir = temp_dir("clear");
+        let store = MemoryStore::default();
+
+        save_secret(&store, &dir, &secret()).unwrap();
+        write_legacy(&dir);
+        assert_eq!(legacy_left(&dir), LEGACY_FILES.to_vec());
+
+        clear_secret(&store, &dir).unwrap();
+
+        assert!(legacy_left(&dir).is_empty());
+        assert!(store.payload.borrow().is_none());
+        assert!(load_secret(&store, &dir).unwrap().is_none());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn clear_removes_legacy_files_even_when_the_store_is_empty() {
+        let dir = temp_dir("clear-empty");
+        let store = MemoryStore::default();
+
+        write_legacy(&dir);
+        clear_secret(&store, &dir).unwrap();
+
+        assert!(legacy_left(&dir).is_empty());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn a_legacy_file_is_moved_into_the_store_and_deleted() {
+        let dir = temp_dir("migrate");
+        let store = MemoryStore::default();
+
+        write_legacy(&dir);
+
+        let restored = load_secret(&store, &dir).unwrap().expect("migrated key");
+
+        assert_eq!(restored.key, KEY);
+        assert!(legacy_left(&dir).is_empty());
+        assert!(store.payload.borrow().as_deref().is_some_and(|payload| payload.contains(BASE)));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn a_leftover_temp_file_alone_is_migrated_and_deleted() {
+        let dir = temp_dir("temp-only");
+        let store = MemoryStore::default();
+
+        fs::write(dir.join(LEGACY_FILES[1]), encode_secret(&secret()).unwrap()).unwrap();
+
+        assert!(load_secret(&store, &dir).unwrap().is_some());
+        assert!(legacy_left(&dir).is_empty());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn saving_a_key_deletes_stale_legacy_files() {
+        let dir = temp_dir("save-stale");
+        let store = MemoryStore::default();
+
+        write_legacy(&dir);
+        save_secret(&store, &dir, &secret()).unwrap();
+
+        assert!(legacy_left(&dir).is_empty());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn an_unavailable_store_keeps_the_key_until_cleared_and_never_echoes_it() {
+        let dir = temp_dir("broken");
+        let store = MemoryStore {
+            broken: true,
+            ..Default::default()
         };
 
-        write_secret(&path, &secret).unwrap();
+        write_legacy(&dir);
 
-        let restored = read_secret(&path).unwrap().expect("stored key");
+        let error = load_secret(&store, &dir).err().expect("store error");
 
-        assert_eq!(restored.base_url, secret.base_url);
-        assert_eq!(restored.key, secret.key);
+        assert!(!error.contains(KEY));
+        assert_eq!(legacy_left(&dir), LEGACY_FILES.to_vec());
+        assert!(save_secret(&store, &dir, &secret()).is_err());
+        assert_eq!(legacy_left(&dir), LEGACY_FILES.to_vec());
 
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
+        assert!(clear_secret(&store, &dir).is_err());
+        assert!(legacy_left(&dir).is_empty());
 
-            let mode = fs::metadata(&path).unwrap().permissions().mode() & 0o777;
-
-            assert_eq!(mode, 0o600);
-        }
-
-        remove_secret(&path).unwrap();
-
-        assert!(read_secret(&path).unwrap().is_none());
-        let _ = fs::remove_file(&path);
+        let _ = fs::remove_dir_all(dir);
     }
 
-    #[cfg(unix)]
+    /// Talks to the real system credential store under a test-only service name.
+    /// Run by hand: `cargo test --lib -- --ignored system_store`.
     #[test]
-    fn replaces_a_stale_temp_file_and_keeps_the_key_owner_only() {
-        use std::os::unix::fs::PermissionsExt;
+    #[ignore]
+    fn system_store_round_trip() {
+        let store = KeyringStore(
+            keyring::Entry::new("com.chsljryyds.aipet.keyring-test", KEYRING_ACCOUNT).unwrap(),
+        );
+        let dir = temp_dir("system");
 
-        let path = temp_secret("stale-temp");
-        let temporary = path.with_extension("json.tmp");
+        store.delete().unwrap();
+        save_secret(&store, &dir, &secret()).unwrap();
 
-        fs::write(&temporary, b"old").unwrap();
-        fs::set_permissions(&temporary, fs::Permissions::from_mode(0o644)).unwrap();
+        let restored = load_secret(&store, &dir).unwrap().expect("stored key");
 
-        write_secret(
-            &path,
-            &AiSecret {
-                base_url: "https://api.example.com/v1".into(),
-                key: "sk-persist-0000".into(),
-            },
-        )
-        .unwrap();
+        assert_eq!(restored.key, KEY);
 
-        let mode = fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        clear_secret(&store, &dir).unwrap();
 
-        assert_eq!(mode, 0o600);
-        assert!(!temporary.exists());
+        assert!(store.read().unwrap().is_none());
 
-        let _ = fs::remove_file(&path);
+        let _ = fs::remove_dir_all(dir);
     }
 
     #[test]
-    fn a_damaged_file_does_not_return_a_key_or_its_contents() {
-        let path = temp_secret("damaged");
+    fn damaged_content_reads_as_no_key() {
+        let dir = temp_dir("damaged");
+        let store = MemoryStore::default();
 
-        fs::write(&path, b"sk-leaked-secret {not json").unwrap();
+        *store.payload.borrow_mut() = Some("sk-leaked-secret {not json".into());
+        fs::write(dir.join(LEGACY_FILES[0]), b"sk-leaked-secret {not json").unwrap();
 
-        let restored = read_secret(&path).expect("damage is treated as missing");
+        assert!(load_secret(&store, &dir).unwrap().is_none());
+        assert!(legacy_left(&dir).is_empty());
 
-        assert!(restored.is_none());
-
-        let _ = fs::remove_file(path);
+        let _ = fs::remove_dir_all(dir);
     }
 }
