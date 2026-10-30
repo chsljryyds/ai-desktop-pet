@@ -43,6 +43,13 @@ gilrs = { git = "https://github.com/ayangweb/gilrs", default-features = false, f
 
 [target."cfg(target_os = \"macos\")".dependencies]
 tauri-nspanel.workspace = true
+keyring = { version = "3.6.3", features = ["apple-native"] }
+
+[target."cfg(target_os = \"windows\")".dependencies]
+keyring = { version = "3.6.3", features = ["windows-native"] }
+
+[target."cfg(target_os = \"linux\")".dependencies]
+keyring = { version = "3.6.3", features = ["sync-secret-service", "crypto-rust", "vendored"] }
 
 [features]
 cargo-clippy = []
